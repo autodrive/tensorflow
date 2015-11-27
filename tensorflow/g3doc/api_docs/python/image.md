@@ -187,14 +187,14 @@ the smallest output, but is slower.
 The resizing Ops accept input images as tensors of several types.  They always
 output resized images as float32 tensors.
 
-The convenience function [resize_images()](#resize_images) supports both 4-D
+The convenience function [`resize_images()`](#resize_images) supports both 4-D
 and 3-D tensors as input and output.  4-D tensors are for batches of images,
 3-D tensors for individual images.
 
 Other resizing Ops only support 3-D individual images as input:
-[resize_area](#resize_area), [resize_bicubic](#resize_bicubic),
-[resize_bilinear](#resize_bilinear),
-[resize_nearest_neighbor](#resize_nearest_neighbor).
+[`resize_area`](#resize_area), [`resize_bicubic`](#resize_bicubic),
+[`resize_bilinear`](#resize_bilinear),
+[`resize_nearest_neighbor`](#resize_nearest_neighbor).
 
 Example:
 
@@ -216,17 +216,17 @@ Resize `images` to `new_width`, `new_height` using the specified `method`.
 
 Resized images will be distorted if their original aspect ratio is not
 the same as `new_width`, `new_height`.  To avoid distortions see
-[resize_image_with_crop_or_pad](#resize_image_with_crop_or_pad).
+[`resize_image_with_crop_or_pad`](#resize_image_with_crop_or_pad).
 
 `method` can be one of:
 
-*   <b>ResizeMethod.BILINEAR</b>: [Bilinear interpolation.]
+*   <b>`ResizeMethod.BILINEAR`</b>: [Bilinear interpolation.]
     (https://en.wikipedia.org/wiki/Bilinear_interpolation)
-*   <b>ResizeMethod.NEAREST_NEIGHBOR</b>: [Nearest neighbor interpolation.]
+*   <b>`ResizeMethod.NEAREST_NEIGHBOR`</b>: [Nearest neighbor interpolation.]
     (https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation)
-*   <b>ResizeMethod.BICUBIC</b>: [Bicubic interpolation.]
+*   <b>`ResizeMethod.BICUBIC`</b>: [Bicubic interpolation.]
     (https://en.wikipedia.org/wiki/Bicubic_interpolation)
-*   <b>ResizeMethod.AREA</b>: Area interpolation.
+*   <b>`ResizeMethod.AREA`</b>: Area interpolation.
 
 ##### Args:
 
@@ -425,7 +425,7 @@ Crops an image to a specified bounding box.
 This op cuts a rectangular part out of `image`. The top-left corner of the
 returned image is at `offset_height, offset_width` in `image`, and its
 lower-right corner is at
-`offset_height + target_height, offset_width + target_width'.
+`offset_height + target_height, offset_width + target_width`.
 
 ##### Args:
 
@@ -724,7 +724,7 @@ have modifications in the range `[-max_delta,max_delta]`.
 ##### Raises:
 
 
-*  <b>`ValueError`</b>: if max_delta is negative.
+*  <b>`ValueError`</b>: if `max_delta` is negative.
 
 
 
@@ -829,5 +829,29 @@ Note that this implementation is limited:
 
 
 *  <b>`ValueError`</b>: if the shape of 'image' is incompatible with this function.
+
+
+
+## Other Functions and Classes
+- - -
+
+### `tf.image.resize_nearest_neighbor_grad(grads, size, name=None)` {#resize_nearest_neighbor_grad}
+
+Computes the gradient of nearest neighbor interpolation.
+
+##### Args:
+
+
+*  <b>`grads`</b>: A `Tensor`. Must be one of the following types: `uint8`, `int8`, `int32`, `float32`, `float64`.
+    4-D with shape `[batch, height, width, channels]`.
+*  <b>`size`</b>: A 1-D int32 Tensor of 2 elements: `orig_height, orig_width`. The
+    original input size.
+*  <b>`name`</b>: A name for the operation (optional).
+
+##### Returns:
+
+  A `Tensor`. Has the same type as `grads`.
+  4-D with shape `[batch, orig_height, orig_width, channels]`. Gradients
+  with respect to the input image.
 
 

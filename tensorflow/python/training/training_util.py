@@ -1,3 +1,18 @@
+# Copyright 2015 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 """Utility functions for training."""
 from __future__ import absolute_import
 from __future__ import division
@@ -37,7 +52,7 @@ def global_step(sess, global_step_tensor):
 def write_graph(graph_def, logdir, name, as_text=True):
   """Writes a graph proto on disk.
 
-  The graph is written as a binary proto unless as_text is `True`.
+  The graph is written as a binary proto unless `as_text` is `True`.
 
   ```python
   v = tf.Variable(0, name='my_variable')

@@ -1,10 +1,25 @@
+# Copyright 2015 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 """FTRL-Proximal for Tensor Flow."""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
-from tensorflow.python.framework import types
 from tensorflow.python.ops import array_ops
 from tensorflow.python.ops import constant_op
 from tensorflow.python.ops import control_flow_ops
@@ -56,8 +71,8 @@ def _Compute(accum, linear, base_lr, lr_power, l1, l2):
     A Tensor which is "variable" after update
   """
   with ops.name_scope("compute_" + accum.op.name):
-    one_t = constant_op.constant(1.0, dtype=types.float32)
-    two_t = constant_op.constant(2.0, dtype=types.float32)
+    one_t = constant_op.constant(1.0, dtype=dtypes.float32)
+    two_t = constant_op.constant(2.0, dtype=dtypes.float32)
     learning_rate = math_ops.pow(accum, lr_power) * base_lr
     quadratic = one_t / learning_rate + two_t * l2
     w = _Solve(quadratic, linear, l1)

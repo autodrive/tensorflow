@@ -1,3 +1,18 @@
+# Copyright 2015 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 """Tests for Python ops defined in sparse_ops."""
 
 from __future__ import absolute_import
@@ -8,9 +23,9 @@ import tensorflow.python.platform
 
 import numpy as np
 
+from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
 from tensorflow.python.framework import test_util
-from tensorflow.python.framework import types
 from tensorflow.python.ops import constant_op
 from tensorflow.python.ops import sparse_ops
 from tensorflow.python.platform import googletest
@@ -26,9 +41,9 @@ class SparseToIndicatorTest(test_util.TensorFlowTestCase):
     val = np.array([0, 10, 13, 14, 32, 33])
     shape = np.array([5, 6])
     return ops.SparseTensor(
-        constant_op.constant(ind, types.int64),
+        constant_op.constant(ind, dtypes.int64),
         constant_op.constant(val, dtype),
-        constant_op.constant(shape, types.int64))
+        constant_op.constant(shape, dtypes.int64))
 
   def _SparseTensor_2x3x4(self, dtype):
     ind = np.array([
@@ -40,13 +55,13 @@ class SparseToIndicatorTest(test_util.TensorFlowTestCase):
     val = np.array([1, 10, 12, 103, 111, 113, 122])
     shape = np.array([2, 3, 4])
     return ops.SparseTensor(
-        constant_op.constant(ind, types.int64),
+        constant_op.constant(ind, dtypes.int64),
         constant_op.constant(val, dtype),
-        constant_op.constant(shape, types.int64))
+        constant_op.constant(shape, dtypes.int64))
 
   def testInt32(self):
     with self.test_session(use_gpu=False):
-      sp_input = self._SparseTensor_5x6(types.int32)
+      sp_input = self._SparseTensor_5x6(dtypes.int32)
       output = sparse_ops.sparse_to_indicator(sp_input, 50).eval()
 
       expected_output = np.zeros((5, 50), dtype=np.bool)
@@ -58,7 +73,7 @@ class SparseToIndicatorTest(test_util.TensorFlowTestCase):
 
   def testInt64(self):
     with self.test_session(use_gpu=False):
-      sp_input = self._SparseTensor_5x6(types.int64)
+      sp_input = self._SparseTensor_5x6(dtypes.int64)
       output = sparse_ops.sparse_to_indicator(sp_input, 50).eval()
 
       expected_output = np.zeros((5, 50), dtype=np.bool)
@@ -70,7 +85,7 @@ class SparseToIndicatorTest(test_util.TensorFlowTestCase):
 
   def testHigherRank(self):
     with self.test_session(use_gpu=False):
-      sp_input = self._SparseTensor_2x3x4(types.int64)
+      sp_input = self._SparseTensor_2x3x4(dtypes.int64)
       output = sparse_ops.sparse_to_indicator(sp_input, 200).eval()
 
       expected_output = np.zeros((2, 3, 200), dtype=np.bool)
@@ -92,9 +107,9 @@ class SparseRetainTest(test_util.TensorFlowTestCase):
     val = np.array([0, 10, 13, 14, 32, 33])
     shape = np.array([5, 6])
     return ops.SparseTensor(
-        constant_op.constant(ind, types.int64),
-        constant_op.constant(val, types.int32),
-        constant_op.constant(shape, types.int64))
+        constant_op.constant(ind, dtypes.int64),
+        constant_op.constant(val, dtypes.int32),
+        constant_op.constant(shape, dtypes.int64))
 
   def testBasic(self):
     with self.test_session(use_gpu=False) as sess:
@@ -138,9 +153,9 @@ class SparseFillEmptyRowsTest(test_util.TensorFlowTestCase):
     val = np.array([0, 10, 13, 14, 32, 33])
     shape = np.array([5, 6])
     return ops.SparseTensor(
-        constant_op.constant(ind, types.int64),
-        constant_op.constant(val, types.int32),
-        constant_op.constant(shape, types.int64))
+        constant_op.constant(ind, dtypes.int64),
+        constant_op.constant(val, dtypes.int32),
+        constant_op.constant(shape, dtypes.int64))
 
   def _SparseTensor_String5x6(self):
     ind = np.array([
@@ -150,18 +165,18 @@ class SparseFillEmptyRowsTest(test_util.TensorFlowTestCase):
     val = np.array(["a", "b", "c", "d", "e", "f"])
     shape = np.array([5, 6])
     return ops.SparseTensor(
-        constant_op.constant(ind, types.int64),
-        constant_op.constant(val, types.string),
-        constant_op.constant(shape, types.int64))
+        constant_op.constant(ind, dtypes.int64),
+        constant_op.constant(val, dtypes.string),
+        constant_op.constant(shape, dtypes.int64))
 
   def _SparseTensor_2x6(self):
     ind = np.array([[0, 0], [1, 0], [1, 3], [1, 4]])
     val = np.array([0, 10, 13, 14])
     shape = np.array([2, 6])
     return ops.SparseTensor(
-        constant_op.constant(ind, types.int64),
-        constant_op.constant(val, types.int32),
-        constant_op.constant(shape, types.int64))
+        constant_op.constant(ind, dtypes.int64),
+        constant_op.constant(val, dtypes.int32),
+        constant_op.constant(shape, dtypes.int64))
 
   def testFillNumber(self):
     with self.test_session(use_gpu=False) as sess:
@@ -192,7 +207,8 @@ class SparseFillEmptyRowsTest(test_util.TensorFlowTestCase):
       self.assertAllEqual(
           output.indices,
           [[0, 0], [1, 0], [1, 3], [1, 4], [2, 0], [3, 2], [3, 3], [4, 0]])
-      self.assertAllEqual(output.values, ["a", "b", "c", "d", "", "e", "f", ""])
+      self.assertAllEqual(output.values,
+                          [b"a", b"b", b"c", b"d", b"", b"e", b"f", b""])
       self.assertAllEqual(output.shape, [5, 6])
       self.assertAllEqual(empty_row_indicator_out,
                           np.array([0, 0, 1, 0, 1]).astype(np.bool))

@@ -1,3 +1,18 @@
+# Copyright 2015 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 """Tests for tensorflow.ops.gradients."""
 from __future__ import absolute_import
 from __future__ import division
@@ -9,9 +24,9 @@ import tensorflow.python.platform
 
 import numpy as np
 
+from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
 from tensorflow.python.framework import test_util
-from tensorflow.python.framework import types
 # pylint: disable=unused-import
 from tensorflow.python.ops import array_grad
 from tensorflow.python.ops import array_ops
@@ -53,7 +68,7 @@ def _OpsBetween(graph, to_ops, from_ops):
     reached_ops[op._id] = True
   gradients._MarkReachedOps(from_ops, reached_ops)
   between_ops = gradients._GatherInputs(to_ops, reached_ops)
-  between_ops.sort(lambda x, y: y._id - x._id)
+  between_ops.sort(key=lambda x: -x._id)
   return between_ops
 
 
@@ -231,13 +246,13 @@ class GradientsTest(test_util.TensorFlowTestCase):
       @ops.RegisterGradient("TestOp")
       def _TestOpGrad(op, float_grad, string_grad):
         """Gradient function for TestOp."""
-        self.assertEquals(float_grad.dtype, types.float32)
+        self.assertEquals(float_grad.dtype, dtypes.float32)
         self.assertFalse(string_grad)
         return float_grad
       ops.RegisterShape("TestOp")(None)
 
       c = constant(1.0)
-      x, y = g.create_op("TestOp", [c], [types.float32, types.string]).outputs
+      x, y = g.create_op("TestOp", [c], [dtypes.float32, dtypes.string]).outputs
       z = x * 2.0
       w = z * 3.0
       grads = gradients.gradients(z, [c])
@@ -299,7 +314,7 @@ class IndexedSlicesToTensorTest(test_util.TensorFlowTestCase):
       c = constant_op.constant(np_val)
       c_sparse = math_ops._as_indexed_slices(c)
       c_sparse = ops.IndexedSlices(
-          c_sparse.values, math_ops.cast(c_sparse.indices, types.int64),
+          c_sparse.values, math_ops.cast(c_sparse.indices, dtypes.int64),
           c_sparse.dense_shape)
       self.assertAllEqual(np_val.shape, c_sparse.dense_shape.eval())
       c_dense = math_ops.mul(c_sparse, 1.0)
@@ -307,16 +322,16 @@ class IndexedSlicesToTensorTest(test_util.TensorFlowTestCase):
 
   def testWarnings(self):
     # Smaller than the threshold: no warning.
-    c_sparse = ops.IndexedSlices(array_ops.placeholder(types.float32),
-                                 array_ops.placeholder(types.int32),
+    c_sparse = ops.IndexedSlices(array_ops.placeholder(dtypes.float32),
+                                 array_ops.placeholder(dtypes.int32),
                                  constant([4, 4, 4, 4]))
     with warnings.catch_warnings(record=True) as w:
       math_ops.mul(c_sparse, 1.0)
     self.assertEqual(0, len(w))
 
     # Greater than or equal to the threshold: warning.
-    c_sparse = ops.IndexedSlices(array_ops.placeholder(types.float32),
-                                 array_ops.placeholder(types.int32),
+    c_sparse = ops.IndexedSlices(array_ops.placeholder(dtypes.float32),
+                                 array_ops.placeholder(dtypes.int32),
                                  constant([100, 100, 100, 100]))
     with warnings.catch_warnings(record=True) as w:
       math_ops.mul(c_sparse, 1.0)
@@ -326,9 +341,9 @@ class IndexedSlicesToTensorTest(test_util.TensorFlowTestCase):
         in str(w[0].message))
 
     # Unknown dense shape: warning.
-    c_sparse = ops.IndexedSlices(array_ops.placeholder(types.float32),
-                                 array_ops.placeholder(types.int32),
-                                 array_ops.placeholder(types.int32))
+    c_sparse = ops.IndexedSlices(array_ops.placeholder(dtypes.float32),
+                                 array_ops.placeholder(dtypes.int32),
+                                 array_ops.placeholder(dtypes.int32))
     with warnings.catch_warnings(record=True) as w:
       math_ops.mul(c_sparse, 1.0)
     self.assertEqual(1, len(w))

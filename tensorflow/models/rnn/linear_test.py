@@ -1,3 +1,18 @@
+# Copyright 2015 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 # pylint: disable=g-bad-import-order,unused-import
 from __future__ import absolute_import
 from __future__ import division
@@ -25,7 +40,7 @@ class LinearTest(tf.test.TestCase):
         # Checks prevent you from accidentally creating a shared function.
         with self.assertRaises(ValueError) as exc:
           l1 = linear.linear([x], 2, False)
-        self.assertEqual(exc.exception.message[:12], "Over-sharing")
+        self.assertEqual(str(exc.exception)[:12], "Over-sharing")
 
         # But you can create a new one in a new scope and share the variables.
         with tf.variable_scope("l1") as new_scope:

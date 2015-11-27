@@ -1,3 +1,18 @@
+# Copyright 2015 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 """Reads Summaries from and writes Summaries to event files."""
 
 from __future__ import absolute_import
@@ -5,7 +20,6 @@ from __future__ import division
 from __future__ import print_function
 
 import os.path
-import Queue
 import threading
 import time
 
@@ -16,6 +30,7 @@ from tensorflow.core.util import event_pb2
 from tensorflow.python import pywrap_tensorflow
 from tensorflow.python.lib.io import tf_record
 from tensorflow.python.platform import gfile
+from tensorflow.python.util import compat
 
 
 class SummaryWriter(object):
@@ -78,9 +93,9 @@ class SummaryWriter(object):
     self._logdir = logdir
     if not gfile.IsDirectory(self._logdir):
       gfile.MakeDirs(self._logdir)
-    self._event_queue = Queue.Queue(max_queue)
+    self._event_queue = six.moves.queue.Queue(max_queue)
     self._ev_writer = pywrap_tensorflow.EventsWriter(
-        os.path.join(self._logdir, "events"))
+        compat.as_bytes(os.path.join(self._logdir, "events")))
     self._worker = _EventLoggerThread(self._event_queue, self._ev_writer,
                                       flush_secs)
     self._worker.start()
@@ -105,7 +120,7 @@ class SummaryWriter(object):
       global_step: Number. Optional global step value to record with the
         summary.
     """
-    if isinstance(summary, six.binary_type):
+    if isinstance(summary, bytes):
       summ = summary_pb2.Summary()
       summ.ParseFromString(summary)
       summary = summ

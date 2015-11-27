@@ -1,3 +1,18 @@
+# Copyright 2015 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 """Tests for rnn module."""
 
 # pylint: disable=g-bad-import-order,unused-import
@@ -35,10 +50,10 @@ class TestStateSaver(object):
     self._batch_size = batch_size
     self._state_size = state_size
 
-  def State(self, _):
+  def state(self, _):
     return tf.zeros(tf.pack([self._batch_size, self._state_size]))
 
-  def SaveState(self, _, state):
+  def save_state(self, _, state):
     self.saved_state = state
     return tf.identity(state)
 
@@ -364,7 +379,7 @@ class LSTMTest(tf.test.TestCase):
       self.assertEqual(len(outputs), len(inputs))
       self.assertEqual(len(outputs), len(states))
 
-      tf.initialize_all_variables().run()
+      tf.initialize_all_variables().run(feed_dict={sequence_length: [2, 3]})
       input_value = np.asarray(np.random.randn(batch_size, input_size),
                                dtype=np.float64)
       values = sess.run(outputs, feed_dict={inputs[0]: input_value,

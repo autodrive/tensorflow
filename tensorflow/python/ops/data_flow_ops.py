@@ -1,3 +1,18 @@
+# Copyright 2015 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 """Data Flow Operations."""
 # pylint: disable=g-bad-name
 from __future__ import absolute_import
@@ -110,12 +125,12 @@ class QueueBase(object):
       A `QueueBase` object.
 
     Raises:
-      TypeError: when `queues` is not a list of `QueueBase` objects,
+      TypeError: When `queues` is not a list of `QueueBase` objects,
         or when the data types of `queues` are not all the same.
     """
     if ((not queues) or
         (not isinstance(queues, list)) or
-        (not all([isinstance(x, QueueBase) for x in queues]))):
+        (not all(isinstance(x, QueueBase) for x in queues))):
       raise TypeError("A list of queues expected")
 
     dtypes = queues[0].dtypes
@@ -441,6 +456,12 @@ ops.RegisterShape("QueueDequeue")(common_shapes.unknown_shape)
 ops.RegisterShape("QueueDequeueMany")(common_shapes.unknown_shape)
 ops.RegisterShape("QueueEnqueue")(common_shapes.unknown_shape)
 ops.RegisterShape("QueueEnqueueMany")(common_shapes.unknown_shape)
+
+
+ops.RegisterShape("Stack")(common_shapes.scalar_shape)
+ops.RegisterShape("StackPush")(common_shapes.unknown_shape)
+ops.RegisterShape("StackPop")(common_shapes.unknown_shape)
+ops.RegisterShape("StackClose")(common_shapes.unknown_shape)
 
 
 @ops.RegisterShape("QueueClose")

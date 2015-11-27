@@ -1,3 +1,18 @@
+# Copyright 2015 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 """Tests for variable store."""
 from __future__ import absolute_import
 from __future__ import division
@@ -129,7 +144,7 @@ class VariableStoreTest(tf.test.TestCase):
         with self.assertRaises(ValueError) as exc:
           with variable_scope.variable_scope("towerA"):
             va2 = variable_scope.get_variable("v", [1])
-        self.assertEqual(exc.exception.message[:12], "Over-sharing")
+        self.assertEqual(str(exc.exception)[:12], "Over-sharing")
 
         with variable_scope.variable_scope("towerA", reuse=True):
           va2 = variable_scope.get_variable("v", [1])
@@ -147,17 +162,17 @@ class VariableStoreTest(tf.test.TestCase):
           with variable_scope.variable_scope(tower_a, reuse=True):
             with variable_scope.variable_scope("baz"):
               variable_scope.get_variable("v", [1])
-        self.assertEqual(exc.exception.message[:13], "Under-sharing")
+        self.assertEqual(str(exc.exception)[:13], "Under-sharing")
 
         with self.assertRaises(ValueError) as exc:
           with variable_scope.variable_scope(tower_a, reuse=True):
             variable_scope.get_variable("v", [2])  # Different shape.
-        self.assertEqual("shape" in exc.exception.message, True)
+        self.assertEqual("shape" in str(exc.exception), True)
 
         with self.assertRaises(ValueError) as exc:
           with variable_scope.variable_scope(tower_a, reuse=True):
             variable_scope.get_variable("v", [1], dtype=tf.int32)
-        self.assertEqual("dtype" in exc.exception.message, True)
+        self.assertEqual("dtype" in str(exc.exception), True)
 
 
 if __name__ == "__main__":

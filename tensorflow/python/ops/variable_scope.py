@@ -1,3 +1,18 @@
+# Copyright 2015 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 """A class to store named variables and a scope operator to manage sharing."""
 
 from __future__ import absolute_import
@@ -7,9 +22,9 @@ from __future__ import print_function
 import contextlib
 import six
 
+from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
 from tensorflow.python.framework import tensor_shape
-from tensorflow.python.framework import types
 from tensorflow.python.ops import init_ops
 from tensorflow.python.ops import variables
 from tensorflow.python.platform import logging
@@ -30,7 +45,7 @@ class _VariableStore(object):
     """Create a variable store."""
     self._vars = {}  # A dictionary of the stored TensorFlow variables.
 
-  def get_variable(self, name, shape=None, dtype=types.float32,
+  def get_variable(self, name, shape=None, dtype=dtypes.float32,
                    initializer=None, reuse=None, trainable=True,
                    collections=None):
     """Gets an existing variable with these parameters or create a new one.
@@ -67,7 +82,7 @@ class _VariableStore(object):
         or when violating reuse during variable creation.
     """
     should_check = reuse is not None
-    dtype = types.as_dtype(dtype)
+    dtype = dtypes.as_dtype(dtype)
     shape = tensor_shape.as_shape(shape)
     if name in self._vars:
       # Here we handle the case when returning an existing variable.
@@ -143,7 +158,7 @@ class _VariableScope(object):
     """Set initializer for this scope."""
     self._initializer = initializer
 
-  def get_variable(self, var_store, name, shape=None, dtype=types.float32,
+  def get_variable(self, var_store, name, shape=None, dtype=dtypes.float32,
                    initializer=None, trainable=True, collections=None):
     """Gets an existing variable with this name or create a new one."""
     if initializer is None and self._initializer:
@@ -179,7 +194,7 @@ def _get_default_variable_store():
   return store
 
 
-def get_variable(name, shape=None, dtype=types.float32, initializer=None,
+def get_variable(name, shape=None, dtype=dtypes.float32, initializer=None,
                  trainable=True, collections=None):
   """Gets an existing variable with these parameters or create a new one.
 

@@ -178,6 +178,7 @@ Calling this method frees all resources associated with the session.
 The graph that was launched in this session.
 
 
+
 - - -
 
 #### `tf.Session.as_default()` {#Session.as_default}
@@ -345,14 +346,15 @@ The operation that failed, if known.
 
 *N.B.* If the failed op was synthesized at runtime, e.g. a `Send`
 or `Recv` op, there will be no corresponding
-[`Operation`](../../api_docs/python/framework.md#Operation) object.  In that case, this
-will return `None`, and you should instead use the
-[`OpError.node_def`](#OpError.node_def) to discover information about the
-op.
+[`Operation`](../../api_docs/python/framework.md#Operation)
+object.  In that case, this will return `None`, and you should
+instead use the [`OpError.node_def`](#OpError.node_def) to
+discover information about the op.
 
 ##### Returns:
 
   The `Operation` that failed, or None.
+
 
 - - -
 
@@ -361,20 +363,21 @@ op.
 The `NodeDef` proto representing the op that failed.
 
 
+
 #### Other Methods
 - - -
 
 #### `tf.OpError.__init__(node_def, op, message, error_code)` {#OpError.__init__}
 
-Creates a new OpError indicating that a particular op failed.
+Creates a new `OpError` indicating that a particular op failed.
 
 ##### Args:
 
 
-*  <b>`node_def`</b>: The graph_pb2.NodeDef proto representing the op that failed.
-*  <b>`op`</b>: The ops.Operation that failed, if known; otherwise None.
+*  <b>`node_def`</b>: The `graph_pb2.NodeDef` proto representing the op that failed.
+*  <b>`op`</b>: The `ops.Operation` that failed, if known; otherwise None.
 *  <b>`message`</b>: The message string describing the failure.
-*  <b>`error_code`</b>: The error_codes_pb2.Code describing the error.
+*  <b>`error_code`</b>: The `error_codes_pb2.Code` describing the error.
 
 
 - - -
@@ -383,11 +386,13 @@ Creates a new OpError indicating that a particular op failed.
 
 The integer error code that describes the error.
 
+
 - - -
 
 #### `tf.OpError.message` {#OpError.message}
 
 The error message that describes the error.
+
 
 
 - - -

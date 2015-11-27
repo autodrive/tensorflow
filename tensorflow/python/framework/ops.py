@@ -1,3 +1,18 @@
+# Copyright 2015 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 """Classes and functions used to construct graphs."""
 # pylint: disable=g-bad-name
 from __future__ import absolute_import
@@ -19,9 +34,10 @@ import six
 from tensorflow.core.framework import attr_value_pb2
 from tensorflow.core.framework import graph_pb2
 from tensorflow.python.framework import device as pydev
+from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import registry
 from tensorflow.python.framework import tensor_shape
-from tensorflow.python.framework import types
+from tensorflow.python.util import compat
 
 
 def _convert_stack(stack):
@@ -171,7 +187,7 @@ class Tensor(object):
       op: An `Operation`. `Operation` that computes this tensor.
       value_index: An `int`. Index of the operation's endpoint that produces
         this tensor.
-      dtype: A `types.DType`. Type of data stored in this tensor.
+      dtype: A `DType`. Type of elements stored in this tensor.
 
     Raises:
       TypeError: If the op is not an `Operation`.
@@ -180,7 +196,7 @@ class Tensor(object):
       raise TypeError("op needs to be an Operation: %s" % op)
     self._op = op
     self._value_index = value_index
-    self._dtype = types.as_dtype(dtype)
+    self._dtype = dtypes.as_dtype(dtype)
     self._shape = tensor_shape.unknown_shape()
     # List of operations that use this Tensor as input.  We maintain this list
     # to easily navigate a computation graph.
@@ -378,10 +394,11 @@ class Tensor(object):
       ValueError: If operator has already been overwritten,
         or if operator is not allowed to be overwritten.
     """
-    if getattr(Tensor, operator, None) is not None:
-      # check to see if this is a default method-wrapper which will be true
-      # for the comparison operators.
-      if not isinstance(getattr(Tensor, operator, None), type(all.__call__)):
+    existing = getattr(Tensor, operator, None)
+    if existing is not None:
+      # Check to see if this is a default method-wrapper or slot wrapper which
+      # will be true for the comparison operators.
+      if not isinstance(existing, type(object.__lt__)):
         raise ValueError("operator %s cannot be overwritten again." % operator)
     if operator not in Tensor.OVERLOADABLE_OPERATORS:
       raise ValueError("Overriding %s is disallowed" % operator)
@@ -481,7 +498,7 @@ def convert_to_tensor(value, dtype=None, name=None):
   """
   error_prefix = "" if name is None else "%s: " % name
   if dtype is not None:
-    dtype = types.as_dtype(dtype)
+    dtype = dtypes.as_dtype(dtype)
   for _, funcs_at_priority in sorted(_tensor_conversion_func_registry.items()):
     for base_type, conversion_func in funcs_at_priority:
       if isinstance(value, base_type):
@@ -523,10 +540,10 @@ def convert_to_tensor_or_indexed_slices(value, dtype=None, name=None):
     ValueError: If `dtype` does not match the element type of `value`.
   """
   if isinstance(value, IndexedSlices):
-    if dtype and not types.AsDType(dtype).is_compatible_with(value.dtype):
+    if dtype and not dtypes.as_dtype(dtype).is_compatible_with(value.dtype):
       raise ValueError(
           "Tensor conversion requested dtype %s for Tensor with dtype %s: %r"
-          % (types.AsDType(dtype).name, value.dtype.name, str(value)))
+          % (dtypes.as_dtype(dtype).name, value.dtype.name, str(value)))
     return value
   else:
     return convert_to_tensor(value, dtype, name)
@@ -865,8 +882,8 @@ def _NodeDef(op_type, name, device=None, attrs=None):
     A graph_pb2.NodeDef protocol buffer.
   """
   node_def = graph_pb2.NodeDef()
-  node_def.op = str(op_type)
-  node_def.name = str(name)
+  node_def.op = compat.as_bytes(op_type)
+  node_def.name = compat.as_bytes(name)
   if attrs is not None:
     for k, v in six.iteritems(attrs):
       node_def.attr[k].CopyFrom(v)
@@ -921,41 +938,41 @@ class Operation(object):
                op_def=None):
     """Creates an `Operation`.
 
-    NOTE: This constructor validates the name of the Operation (passed
-    as "node_def.name"). Valid Operation names match the following
+    NOTE: This constructor validates the name of the `Operation` (passed
+    as `node_def.name`). Valid `Operation` names match the following
     regular expression:
 
-      [A-Za-z0-9.][A-Za-z0-9_.\\-/]*
+        [A-Za-z0-9.][A-Za-z0-9_.\\-/]*
 
     Args:
-      node_def: graph_pb2.NodeDef.  NodeDef for the Operation.
-        Used for attributes of graph_pb2.NodeDef, typically "name",
-        "op", and "device".  The "input" attribute is irrelevant here
+      node_def: `graph_pb2.NodeDef`.  `NodeDef` for the `Operation`.
+        Used for attributes of `graph_pb2.NodeDef`, typically `name`,
+        `op`, and `device`.  The `input` attribute is irrelevant here
         as it will be computed when generating the model.
-      g: Graph. The parent graph.
-      inputs: list of Tensor objects. The inputs to this Operation.
-      output_types: list of types_pb2.DataType.  List of the types of the
-        Tensors computed by this operation.  The length of this list indicates
-        the number of output endpoints of the Operation.
+      g: `Graph`. The parent graph.
+      inputs: list of `Tensor` objects. The inputs to this `Operation`.
+      output_types: list of `DType` objects.  List of the types of the
+        `Tensors` computed by this operation.  The length of this list indicates
+        the number of output endpoints of the `Operation`.
       control_inputs: list of operations or tensors from which to have a
         control dependency.
-      input_types: List of types_pb2.DataType representing the
-        types of the Tensors accepted by the Operation.  By default
-        uses [x.dtype.base_dtype for x in inputs].  Operations that expect
+      input_types: List of `DType` objects representing the
+        types of the tensors accepted by the `Operation`.  By default
+        uses `[x.dtype.base_dtype for x in inputs]`.  Operations that expect
         reference-typed inputs must specify these explicitly.
-      original_op: Optional. Used to associate the new Operation with an
-        existing Operation (for example, a replica with the op that was
+      original_op: Optional. Used to associate the new `Operation` with an
+        existing `Operation` (for example, a replica with the op that was
         replicated).
-      op_def: Optional. The op_def_pb2.OpDef proto that describes the
-        op type that this Operation represents.
+      op_def: Optional. The `op_def_pb2.OpDef` proto that describes the
+        op type that this `Operation` represents.
 
     Raises:
       TypeError: if control inputs are not Operations or Tensors,
-        or if node_def is not a NodeDef,
-        or if g is not a Graph,
-        or if inputs are not Tensors,
-        or if inputs and input_types are incompatible.
-      ValueError: if the node_def name is not valid.
+        or if `node_def` is not a `NodeDef`,
+        or if `g` is not a `Graph`,
+        or if `inputs` are not tensors,
+        or if `inputs` and `input_types` are incompatible.
+      ValueError: if the `node_def` name is not valid.
     """
     if not isinstance(node_def, graph_pb2.NodeDef):
       raise TypeError("node_def needs to be a NodeDef: %s" % node_def)
@@ -1064,7 +1081,7 @@ class Operation(object):
 
     Args:
       tensor: the Tensor to add as an input.
-      dtype: types.DType: type of the input; defaults to
+      dtype: tf.DType: type of the input; defaults to
         the tensor's dtype.
 
     Raises:
@@ -1078,7 +1095,7 @@ class Operation(object):
     if dtype is None:
       dtype = tensor.dtype
     else:
-      dtype = types.as_dtype(dtype)
+      dtype = dtypes.as_dtype(dtype)
       if not dtype.is_compatible_with(tensor.dtype):
         raise TypeError(
             "Cannot convert a tensor of type %s to an input of type %s"
@@ -1096,7 +1113,7 @@ class Operation(object):
     Args:
       index: the index of the input to update.
       tensor: the Tensor to be used as the input at the given index.
-      dtype: types.DType: type of the input; defaults to
+      dtype: tf.DType: type of the input; defaults to
         the tensor's dtype.
 
     Raises:
@@ -1110,7 +1127,7 @@ class Operation(object):
     if dtype is None:
       dtype = tensor.dtype
     else:
-      dtype = types.as_dtype(dtype)
+      dtype = dtypes.as_dtype(dtype)
       if not dtype.is_compatible_with(tensor.dtype):
         raise TypeError(
             "Cannot convert a tensor of type %s to an input of type %s"
@@ -1399,7 +1416,7 @@ class RegisterShape(object):
   """
 
   def __init__(self, op_type):
-    """Saves the "op_type" as the Operation type."""
+    """Saves the `op_type` as the `Operation` type."""
     if not isinstance(op_type, six.string_types):
       raise TypeError("op_type must be a string")
     self._op_type = op_type
@@ -1649,7 +1666,7 @@ class Graph(object):
       protocol buffer.
 
     Raises:
-      ValueError: If the graph_def would be too large.
+      ValueError: If the `graph_def` would be too large.
     """
     graph = graph_pb2.GraphDef()
     bytesize = 0
@@ -1748,7 +1765,7 @@ class Graph(object):
     try:
       kernel_label = self._op_to_kernel_label_map[op_type]
       node_def.attr["_kernel"].CopyFrom(
-          attr_value_pb2.AttrValue(s=kernel_label))
+          attr_value_pb2.AttrValue(s=compat.as_bytes(kernel_label)))
     except KeyError:
       pass
 
@@ -1757,7 +1774,7 @@ class Graph(object):
     try:
       mapped_op_type = self._gradient_override_map[op_type]
       node_def.attr["_gradient_op_type"].CopyFrom(
-          attr_value_pb2.AttrValue(s=mapped_op_type))
+          attr_value_pb2.AttrValue(s=compat.as_bytes(mapped_op_type)))
     except KeyError:
       pass
 
@@ -1828,8 +1845,8 @@ class Graph(object):
       obj = conv_fn()
 
     # If obj appears to be a name...
-    if isinstance(obj, six.string_types):
-      name = obj
+    if isinstance(obj, compat.bytes_or_text_types):
+      name = compat.as_str(obj)
 
       if ":" in name and allow_tensor:
         # Looks like a Tensor name and can be a Tensor.
@@ -2149,19 +2166,20 @@ class Graph(object):
   # pylint: enable=g-doc-return-or-yield
 
   def unique_name(self, name):
-    """Return a unique Operation name for "name".
+    """Return a unique operation name for `name`.
 
-    Note: You rarely need to call unique_name() directly.  Most of the time you
-    just need to create "with g.name_scope()" blocks to generate structured
-    names.
+    Note: You rarely need to call `unique_name()` directly.  Most of
+    the time you just need to create `with g.name_scope()` blocks to
+    generate structured names.
 
-    `unique_name` is used to generate structured names, separated by "/",
-    to help identify Operations when debugging a Graph.  Operation names
-    are displayed in error messages reported by the TensorFlow runtime,
-    and in various visualization tools such as TensorBoard.
+    `unique_name` is used to generate structured names, separated by
+    `"/"`, to help identify operations when debugging a graph.
+    Operation names are displayed in error messages reported by the
+    TensorFlow runtime, and in various visualization tools such as
+    TensorBoard.
 
     Args:
-      name: The name for an `Operation`.
+      name: The name for an operation.
 
     Returns:
       A string to be passed to `create_op()` that will be used
@@ -2218,7 +2236,7 @@ class Graph(object):
   def _push_default_device_function(self, device_function):
     """Pushes the given function onto the stack of device functions.
 
-    See Graph.device for more details.
+    See `Graph.device` for more details.
 
     Args:
       device_function: The function to be pushed onto the stack of device
@@ -2229,7 +2247,7 @@ class Graph(object):
   def _pop_default_device_function(self, device_function):
     """Pops the given function from the stack of device functions.
 
-    See Graph.device for more details.
+    See `Graph.device` for more details.
 
     Args:
       device_function: The function to be popped from the stack of device
@@ -2773,8 +2791,8 @@ def _eval_using_default_session(tensors, feed_dict, graph, session=None):
     session = get_default_session()
     if session is None:
       raise ValueError("Cannot evaluate tensor using eval(): No default "
-                       "session is registered. Use 'with "
-                       "DefaultSession(sess)' or pass an explicit session to "
+                       "session is registered. Use `with "
+                       "sess.as_default()` or pass an explicit session to "
                        "eval(session=sess)")
     if session.graph is not graph:
       raise ValueError("Cannot use the default session to evaluate tensor: "
@@ -2910,8 +2928,7 @@ def _get_graph_from_inputs(op_input_list, graph=None):
   Returns:
     The appropriate graph to use for the given inputs.
   """
-  if not isinstance(op_input_list, (list, tuple)):
-    raise TypeError("The op_input_list must be a list or tuple")
+  op_input_list = tuple(op_input_list)  # Handle generators correctly
 
   # 1. If the graph is specified explicitly, we validate that all of the inputs
   #    are compatible with that graph.

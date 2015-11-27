@@ -1,3 +1,18 @@
+# Copyright 2015 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 # pylint: disable=g-long-lambda
 """Tests for tensorflow.ops.control_flow_ops."""
 from __future__ import absolute_import
@@ -13,6 +28,7 @@ from six.moves import xrange  # pylint: disable=redefined-builtin
 import tensorflow as tf
 
 from tensorflow.python.ops import control_flow_ops
+from tensorflow.python.ops import gen_data_flow_ops
 from tensorflow.python.ops import gradients
 from tensorflow.python.pywrap_tensorflow import StatusNotOK
 
@@ -958,6 +974,30 @@ class ControlFlowTest(tf.test.TestCase):
       self.assertEqual([10], r.eval())
       for i in xrange(10):
         self.assertEqual([i], q.dequeue().eval())
+
+  def testWhileStack_1(self):
+    with self.test_session():
+      s = gen_data_flow_ops._stack(tf.int32, stack_name="foo")
+      i = tf.constant(0)
+
+      def c(i):
+        return tf.less(i, 10)
+      def b(i):
+        ni = tf.add(i, 1)
+        ni = control_flow_ops.with_dependencies(
+            [gen_data_flow_ops._stack_push(s, i)], ni)
+        return ni
+      r = control_flow_ops.While(c, b, [i], parallel_iterations=1)
+
+      x = tf.constant(0)
+      def c1(i, _):
+        return tf.greater(i, 0)
+      def b1(i, x):
+        ni = tf.sub(i, 1)
+        nx = x + gen_data_flow_ops._stack_pop(s, tf.int32)
+        return [ni, nx]
+      _, rx = control_flow_ops.While(c1, b1, [r, x], parallel_iterations=1)
+      self.assertEqual(45, rx.eval())
 
   def testFold_1(self):
     with self.test_session():

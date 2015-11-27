@@ -1,10 +1,25 @@
+# Copyright 2015 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 """Operations often used for initializing tensors."""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 import math
-from tensorflow.python.framework import types
+from tensorflow.python.framework import dtypes
 from tensorflow.python.ops import array_ops
 from tensorflow.python.ops import constant_op
 from tensorflow.python.ops import math_ops
@@ -14,21 +29,21 @@ from tensorflow.python.ops import random_ops
 
 # TODO(mrry): PEP8 these.
 def constant_initializer(value=0.0):
-  """Returns an initializer that generates Tensors with a single value.
+  """Returns an initializer that generates tensors with a single value.
 
   Args:
     value: A Python scalar. All elements of the initialized variable
       will be set to this value.
 
   Returns:
-    An initializer that generates Tensors with a single value.
+    An initializer that generates tensors with a single value.
   """
-  def _initializer(shape, dtype=types.float32):
+  def _initializer(shape, dtype=dtypes.float32):
     return constant_op.constant(value, dtype=dtype, shape=shape)
   return _initializer
 
 def random_uniform_initializer(minval=0.0, maxval=1.0, seed=None):
-  """Returns an initializer that generates Tensors with a uniform distribution.
+  """Returns an initializer that generates tensors with a uniform distribution.
 
   Args:
     minval: a python scalar or a scalar tensor. lower bound of the range
@@ -40,14 +55,14 @@ def random_uniform_initializer(minval=0.0, maxval=1.0, seed=None):
       for behavior.
 
   Returns:
-    An initializer that generates Tensors with a uniform distribution.
+    An initializer that generates tensors with a uniform distribution.
   """
-  def _initializer(shape, dtype=types.float32):
+  def _initializer(shape, dtype=dtypes.float32):
     return random_ops.random_uniform(shape, minval, maxval, dtype, seed=seed)
   return _initializer
 
 def random_normal_initializer(mean=0.0, stddev=1.0, seed=None):
-  """Returns an initializer that generates Tensors with a normal distribution.
+  """Returns an initializer that generates tensors with a normal distribution.
 
   Args:
     mean: a python scalar or a scalar tensor. Mean of the random values
@@ -59,16 +74,16 @@ def random_normal_initializer(mean=0.0, stddev=1.0, seed=None):
       for behavior.
 
   Returns:
-    An initializer that generates Tensors with a normal distribution.
+    An initializer that generates tensors with a normal distribution.
   """
-  def _initializer(shape, dtype=types.float32):
+  def _initializer(shape, dtype=dtypes.float32):
     return random_ops.random_normal(shape, mean, stddev, dtype, seed=seed)
   return _initializer
 
 def truncated_normal_initializer(mean=0.0, stddev=1.0, seed=None):
   """Returns an initializer that generates a truncated normal distribution.
 
-  These values are similar to values from a random_normal_initializer
+  These values are similar to values from a `random_normal_initializer`
   except that values more than two standard deviations from the mean
   are discarded and re-drawn. This is the recommended initializer for
   neural network weights and filters.
@@ -83,10 +98,10 @@ def truncated_normal_initializer(mean=0.0, stddev=1.0, seed=None):
       for behavior.
 
   Returns:
-    An initializer that generates Tensors with a truncated normal
+    An initializer that generates tensors with a truncated normal
     distribution.
   """
-  def _initializer(shape, dtype=types.float32):
+  def _initializer(shape, dtype=dtypes.float32):
     return random_ops.truncated_normal(shape, mean, stddev, dtype, seed=seed)
   return _initializer
 
@@ -117,7 +132,7 @@ def uniform_unit_scaling_initializer(factor=1.0, seed=None):
   Returns:
     An initializer that generates tensors with unit variance.
   """
-  def _initializer(shape, dtype=types.float32):
+  def _initializer(shape, dtype=dtypes.float32):
     input_size = 1.0
     # Estimating input size is not possible to do perfectly, but we try.
     # The estimate, obtained by multiplying all dimensions but the last one,
@@ -131,7 +146,7 @@ def uniform_unit_scaling_initializer(factor=1.0, seed=None):
 
 
 # TODO(vrv): Unhide when we are ready to expose this publicly.
-def _random_walk(shape, nonlinearity, dtype=types.float32, seed=None,
+def _random_walk(shape, nonlinearity, dtype=dtypes.float32, seed=None,
                  name="random_walk"):
   """Create a random tensor such that backprop neither vanishes nor explodes.
 
@@ -185,7 +200,7 @@ class _RandomWalkInitializer(object):
     self._nonlinearity = nonlinearity
     self._seed = seed
 
-  def __call__(self, shape, dtype=types.float32):
+  def __call__(self, shape, dtype=dtypes.float32):
     """Generate a tensor used to initialize a variable."""
     return random_ops._random_walk(shape, self._nonlinearity, dtype,
                                    seed=self._seed)

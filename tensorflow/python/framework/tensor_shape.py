@@ -1,3 +1,18 @@
+# Copyright 2015 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 """Helper classes for tensor shape inference."""
 from __future__ import absolute_import
 from __future__ import division
@@ -34,6 +49,10 @@ class Dimension(object):
     return self._value != other.value
 
   def __int__(self):
+    return self._value
+
+  def __index__(self):
+    # Allow use in Python 3 range
     return self._value
 
   @property
@@ -77,11 +96,11 @@ class Dimension(object):
 
     Dimensions are combined as follows:
 
-      Dimension(n)   .merge_with(Dimension(n))    == Dimension(n)
-      Dimension(n)   .merge_with(Dimension(None)) == Dimension(n)
-      Dimension(None).merge_with(Dimension(n))    == Dimension(n)
-      Dimension(None).merge_with(Dimension(None)) == Dimension(None)
-      Dimension(n)   .merge_with(Dimension(m)) raises ValueError for n != m
+        Dimension(n)   .merge_with(Dimension(n))    == Dimension(n)
+        Dimension(n)   .merge_with(Dimension(None)) == Dimension(n)
+        Dimension(None).merge_with(Dimension(n))    == Dimension(n)
+        Dimension(None).merge_with(Dimension(None)) == Dimension(None)
+        Dimension(n)   .merge_with(Dimension(m)) raises ValueError for n != m
 
     Args:
       other: Another Dimension.
@@ -690,7 +709,7 @@ class TensorShape(object):
       raise ValueError("Shape %s is not fully defined" % self)
 
   def as_dimension_list(self):
-    """DEPRECATED: use as_list()."""
+    """DEPRECATED: use `as_list()`."""
     self.assert_is_fully_defined()
     return self.as_list()
 

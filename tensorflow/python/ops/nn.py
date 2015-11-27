@@ -1,3 +1,18 @@
+# Copyright 2015 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 # pylint: disable=wildcard-import,unused-import,g-bad-import-order
 """## Activation Functions
 
@@ -189,9 +204,9 @@ from __future__ import division
 from __future__ import print_function
 
 from six.moves import xrange  # pylint: disable=redefined-builtin
+from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
 from tensorflow.python.framework import tensor_shape
-from tensorflow.python.framework import types
 from tensorflow.python.ops import array_ops
 from tensorflow.python.ops import candidate_sampling_ops
 from tensorflow.python.ops import constant_op
@@ -345,7 +360,7 @@ def zero_fraction(value, name=None):
     value = ops.convert_to_tensor(value, name="value")
     zero = constant_op.constant(0, dtype=value.dtype, name="zero")
     return math_ops.reduce_mean(math_ops.cast(math_ops.equal(value, zero),
-                                              types.float32))
+                                              dtypes.float32))
 
 
 def dropout(x, keep_prob, noise_shape=None, seed=None, name=None):
@@ -618,35 +633,42 @@ def _compute_sampled_logits(weights, biases, inputs, labels, num_sampled,
   sum to 1 per-example.
 
   Args:
-    weights: tensor of label embeddings with shape = [num_classes, dim]
-    biases: tensor of num_classes label biases
-    inputs: tensor with shape = [batch_size, dim] corresponding to forward
-        activations of the input network
-    labels: int tensor with shape [batch_size, num_true]
-    num_sampled: number of label classes to sample per batch
-    num_classes: number of possible label classes in the data (e.g. vocab size)
-    num_true: number of target classes per example (default: 1)
-    sampled_values: a tuple of (sampled_candidates, true_expected_count,
-        sampled_expected_count) returned by a *CandidateSampler function to use
-        (if None, we default to LogUniformCandidateSampler)
-    subtract_log_q: subtract the log expected count of the labels in the sample
-        to get the logits of the true labels (default: True)
-        Turn off for Negative Sampling.
-    remove_accidental_hits: whether to remove "accidental hits" where a sampled
-        label equals the true labels (bool, default: False)
-    name: name for this op
-
+    weights: A `Tensor` of shape `[num_classes, dim]`, or a list of `Tensor`
+        objects whose concatenation along dimension 0 has shape
+        `[num_classes, dim]`.  The (possibly-sharded) class embeddings.
+    biases: A `Tensor` of shape `[num_classes]`.  The class biases.
+    inputs: A `Tensor` of shape `[batch_size, dim]`.  The forward
+        activations of the input network.
+    labels: A `Tensor` of type `int64` and shape `[batch_size,
+        num_true]`. The target classes.  Note that this format differs from
+        the `labels` argument of `nn.softmax_cross_entropy_with_logits`.
+    num_sampled: An `int`.  The number of classes to randomly sample per batch.
+    num_classes: An `int`. The number of possible classes.
+    num_true: An `int`.  The number of target classes per training example.
+    sampled_values: a tuple of (`sampled_candidates`, `true_expected_count`,
+        `sampled_expected_count`) returned by a `*_candidate_sampler` function.
+        (if None, we default to `log_uniform_candidate_sampler`)
+    subtract_log_q: A `bool`.  whether to subtract the log expected count of
+        the labels in the sample to get the logits of the true labels.
+        Default is True.  Turn off for Negative Sampling.
+    remove_accidental_hits:  A `bool`.  whether to remove "accidental hits"
+        where a sampled class equals one of the target classes.  Default is
+        False.
+    name: A name for the operation (optional).
   Returns:
-    out_logits, out_labels: tensors with shape [batch_size, num_true +
-        num_sampled] for passing to either SigmoidCrossEntropyWithLogits (NCE)
-        or SoftmaxCrossEntropyWithLogits (sampled softmax).
-
+    out_logits, out_labels: `Tensor` objects each with shape
+        `[batch_size, num_true + num_sampled]`, for passing to either
+        `nn.sigmoid_cross_entropy_with_logits` (NCE) or
+        `nn.softmax_cross_entropy_with_logits` (sampled softmax).
   """
 
+  if not isinstance(weights, list):
+    weights = [weights]
+
   with ops.op_scope(
-      [weights, biases, inputs, labels], name, "compute_sampled_logits"):
-    if labels.dtype != types.int64:
-      labels = math_ops.cast(labels, types.int64)
+      weights + [biases, inputs, labels], name, "compute_sampled_logits"):
+    if labels.dtype != dtypes.int64:
+      labels = math_ops.cast(labels, dtypes.int64)
     labels_flat = array_ops.reshape(labels, [-1])
 
     # Sample the negative labels.
@@ -711,7 +733,7 @@ def _compute_sampled_logits(weights, biases, inputs, labels, num_sampled,
       # This is how SparseToDense expects the indices.
       acc_indices_2d = array_ops.reshape(acc_indices, [-1, 1])
       acc_ids_2d_int32 = array_ops.reshape(math_ops.cast(
-          acc_ids, types.int32), [-1, 1])
+          acc_ids, dtypes.int32), [-1, 1])
       sparse_indices = array_ops.concat(
           1, [acc_indices_2d, acc_ids_2d_int32], "sparse_indices")
       # Create sampled_logits_shape = [batch_size, num_sampled]
@@ -751,8 +773,8 @@ def nce_loss(weights, biases, inputs, labels, num_sampled, num_classes,
   Also see our [Candidate Sampling Algorithms Reference]
   (http://www.tensorflow.org/extras/candidate_sampling.pdf)
 
-  Note: In the case where num_true > 1, we assign to each target class
-  the target probability 1 / num_true so that the target probabilities
+  Note: In the case where `num_true` > 1, we assign to each target class
+  the target probability 1 / `num_true` so that the target probabilities
   sum to 1 per-example.
 
   Note: It would be useful to allow a variable number of target classes per
@@ -762,18 +784,20 @@ def nce_loss(weights, biases, inputs, labels, num_sampled, num_classes,
   with an otherwise unused class.
 
   Args:
-    weights: A `Tensor` of shape [num_classes, dim].  The class embeddings.
-    biases: A `Tensor` of shape [num_classes].  The class biases.
-    inputs: A `Tensor` of shape [batch_size, dim].  The forward
+    weights: A `Tensor` of shape `[num_classes, dim]`, or a list of `Tensor`
+        objects whose concatenation along dimension 0 has shape
+        [num_classes, dim].  The (possibly-sharded) class embeddings.
+    biases: A `Tensor` of shape `[num_classes]`.  The class biases.
+    inputs: A `Tensor` of shape `[batch_size, dim]`.  The forward
         activations of the input network.
     labels: A `Tensor` of type `int64` and shape `[batch_size,
-      num_true]`. The target classes.
+        num_true]`. The target classes.
     num_sampled: An `int`.  The number of classes to randomly sample per batch.
     num_classes: An `int`. The number of possible classes.
     num_true: An `int`.  The number of target classes per training example.
-    sampled_values: a tuple of `(sampled_candidates, true_expected_count,
-        sampled_expected_count)` returned by a *_candidate_sampler function.
-        (if None, we default to LogUniformCandidateSampler)
+    sampled_values: a tuple of (`sampled_candidates`, `true_expected_count`,
+        `sampled_expected_count`) returned by a `*_candidate_sampler` function.
+        (if None, we default to `log_uniform_candidate_sampler`)
     remove_accidental_hits:  A `bool`.  Whether to remove "accidental hits"
         where a sampled class equals one of the target classes.  If set to
         `True`, this is a "Sampled Logistic" loss instead of NCE, and we are
@@ -784,7 +808,7 @@ def nce_loss(weights, biases, inputs, labels, num_sampled, num_classes,
     name: A name for the operation (optional).
 
   Returns:
-    A batch_size 1-D tensor of per-example NCE losses.
+    A `batch_size` 1-D tensor of per-example NCE losses.
   """
   logits, labels = _compute_sampled_logits(
       weights, biases, inputs, labels, num_sampled, num_classes,
@@ -823,26 +847,28 @@ def sampled_softmax_loss(weights, biases, inputs, labels, num_sampled,
   Also see Section 3 of http://arxiv.org/abs/1412.2007 for the math.
 
   Args:
-    weights: A `Tensor` of shape [num_classes, dim].  The class embeddings.
-    biases: A `Tensor` of shape [num_classes].  The class biases.
-    inputs: A `Tensor` of shape [batch_size, dim].  The forward
+    weights: A `Tensor` of shape `[num_classes, dim]`, or a list of `Tensor`
+        objects whose concatenation along dimension 0 has shape
+        [num_classes, dim].  The (possibly-sharded) class embeddings.
+    biases: A `Tensor` of shape `[num_classes]`.  The class biases.
+    inputs: A `Tensor` of shape `[batch_size, dim]`.  The forward
         activations of the input network.
     labels: A `Tensor` of type `int64` and shape `[batch_size,
-      num_true]`. The target classes.  Note that this format differs from
-      the `labels` argument of `nn.softmax_cross_entropy_with_logits`.
+        num_true]`. The target classes.  Note that this format differs from
+        the `labels` argument of `nn.softmax_cross_entropy_with_logits`.
     num_sampled: An `int`.  The number of classes to randomly sample per batch.
     num_classes: An `int`. The number of possible classes.
     num_true: An `int`.  The number of target classes per training example.
-    sampled_values: a tuple of `(sampled_candidates, true_expected_count,
-        sampled_expected_count)` returned by a *_candidate_sampler function.
-        (if None, we default to LogUniformCandidateSampler)
+    sampled_values: a tuple of (`sampled_candidates`, `true_expected_count`,
+        `sampled_expected_count`) returned by a `*_candidate_sampler` function.
+        (if None, we default to `log_uniform_candidate_sampler`)
     remove_accidental_hits:  A `bool`.  whether to remove "accidental hits"
         where a sampled class equals one of the target classes.  Default is
         True.
     name: A name for the operation (optional).
 
   Returns:
-    A batch_size 1-D tensor of per-example sampled softmax losses.
+    A `batch_size` 1-D tensor of per-example sampled softmax losses.
 
   """
   logits, labels = _compute_sampled_logits(

@@ -1,3 +1,18 @@
+# Copyright 2015 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 """Tests for tensorflow.ops.test_util."""
 from __future__ import absolute_import
 from __future__ import division
@@ -12,10 +27,10 @@ from six.moves import xrange  # pylint: disable=redefined-builtin
 from google.protobuf import text_format
 
 from tensorflow.core.framework import graph_pb2
+from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import errors
 from tensorflow.python.framework import ops
 from tensorflow.python.framework import test_util
-from tensorflow.python.framework import types
 from tensorflow.python.platform import googletest
 from tensorflow.python.ops import logging_ops
 
@@ -68,8 +83,7 @@ class TestUtilTest(test_util.TensorFlowTestCase):
     t.start()
     with self.assertRaises(self.failureException) as fe:
       t.join()
-    self.assertTrue("integer division or modulo by zero"
-                    in fe.exception.message)
+    self.assertTrue("integer division or modulo by zero" in str(fe.exception))
 
   def testCheckedThreadWithWrongAssertionFails(self):
     x = 37
@@ -81,7 +95,7 @@ class TestUtilTest(test_util.TensorFlowTestCase):
     t.start()
     with self.assertRaises(self.failureException) as fe:
       t.join()
-    self.assertTrue("False is not true" in fe.exception.message)
+    self.assertTrue("False is not true" in str(fe.exception))
 
   def testMultipleThreadsWithOneFailure(self):
     def err_func(i):

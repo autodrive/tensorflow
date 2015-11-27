@@ -190,7 +190,6 @@
   * [`tuple`](../../api_docs/python/control_flow_ops.md#tuple)
   * [`verify_tensor_all_finite`](../../api_docs/python/control_flow_ops.md#verify_tensor_all_finite)
   * [`where`](../../api_docs/python/control_flow_ops.md#where)
-  * [`xrange`](../../api_docs/python/control_flow_ops.md#xrange)
 
 * **[Images](../../api_docs/python/image.md)**:
   * [`adjust_brightness`](../../api_docs/python/image.md#adjust_brightness)
@@ -216,6 +215,7 @@
   * [`resize_image_with_crop_or_pad`](../../api_docs/python/image.md#resize_image_with_crop_or_pad)
   * [`resize_images`](../../api_docs/python/image.md#resize_images)
   * [`resize_nearest_neighbor`](../../api_docs/python/image.md#resize_nearest_neighbor)
+  * [`resize_nearest_neighbor_grad`](../../api_docs/python/image.md#resize_nearest_neighbor_grad)
   * [`transpose_image`](../../api_docs/python/image.md#transpose_image)
 
 * **[Sparse Tensors](../../api_docs/python/sparse_ops.md)**:

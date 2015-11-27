@@ -1,3 +1,18 @@
+# Copyright 2015 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 """Library of dtypes (Tensor element types)."""
 from __future__ import absolute_import
 from __future__ import division
@@ -55,8 +70,8 @@ class DType(object):
     """Creates a new `DataType`.
 
     NOTE(mrry): In normal circumstances, you should not need to
-    construct a DataType object directly. Instead, use the
-    types.as_dtype() function.
+    construct a `DataType` object directly. Instead, use the
+    `tf.as_dtype()` function.
 
     Args:
       type_enum: A `types_pb2.DataType` enum value.
@@ -207,6 +222,9 @@ class DType(object):
 
   def __repr__(self):
     return "tf." + self.name
+
+  def __hash__(self):
+    return self._type_enum
 
 
 # Define standard wrappers for the types_pb2.DataType enum.

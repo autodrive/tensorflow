@@ -1,3 +1,18 @@
+# Copyright 2015 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 """A library of common shape functions."""
 from __future__ import absolute_import
 from __future__ import division
@@ -115,10 +130,10 @@ def get2d_conv_output_size(input_height, input_width, filter_height,
     # Compute number of rows in the output, based on the padding.
     if input_height.value is None or filter_height.value is None:
       out_rows = None
-    elif padding_type == "VALID":
+    elif padding_type == b"VALID":
       out_rows = ((input_height.value - filter_height.value + row_stride) //
                   row_stride)
-    elif padding_type == "SAME":
+    elif padding_type == b"SAME":
       out_rows = (input_height.value + row_stride - 1) // row_stride
     else:
       raise ValueError("Invalid value for padding: %r" % padding_type)
@@ -126,10 +141,10 @@ def get2d_conv_output_size(input_height, input_width, filter_height,
     # Compute number of columns in the output, based on the padding.
     if input_width.value is None or filter_width.value is None:
       out_cols = None
-    elif padding_type == "VALID":
+    elif padding_type == b"VALID":
       out_cols = ((input_width.value - filter_width.value + col_stride) //
                   col_stride)
-    elif padding_type == "SAME":
+    elif padding_type == b"SAME":
       out_cols = (input_width.value + col_stride - 1) // col_stride
 
     return out_rows, out_cols

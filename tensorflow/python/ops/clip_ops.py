@@ -1,3 +1,18 @@
+# Copyright 2015 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 """Operations for clipping (gradient, weight) tensors to min/max values."""
 from __future__ import absolute_import
 from __future__ import division
@@ -7,8 +22,8 @@ import collections
 
 import six
 
+from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
-from tensorflow.python.framework import types
 from tensorflow.python.ops import array_ops
 from tensorflow.python.ops import constant_op
 from tensorflow.python.ops import math_ops
@@ -50,7 +65,7 @@ def clip_by_norm(t, clip_norm, name=None):
   """Clips tensor values to a maximum L2-norm.
 
   Given a tensor `t`, and a maximum clip value `clip_norm`, this operation
-  normalizes `t` so that its L2-norm is less than or equal to `clip_norm'.
+  normalizes `t` so that its L2-norm is less than or equal to `clip_norm`.
   Specifically, if the L2-norm is already less than or equal to `clip_norm`,
   then `t` is not modified. If the L2-norm is greater than `clip_norm`, then
   this operation returns a tensor of the same type and shape as `t` with its
@@ -131,18 +146,18 @@ def clip_by_global_norm(t_list, clip_norm, use_norm=None, name=None):
   if you've already computed the global norm for `t_list`, you can specify
   the global norm with `use_norm`.
 
-  To perform the clipping, the values t_list[i] are set to:
+  To perform the clipping, the values `t_list[i]` are set to:
 
-  `t_list[i] * clip_norm / max(global_norm, clip_norm)`
+      t_list[i] * clip_norm / max(global_norm, clip_norm)
 
   where:
 
-  `global_norm = sqrt(sum([l2norm(t)**2 for t in t_list]))`
+      global_norm = sqrt(sum([l2norm(t)**2 for t in t_list]))
 
   If `clip_norm > global_norm` then the entries in `t_list` remain as they are,
   otherwise they're all shrunk by the global ratio.
 
-  Any of the entries of `t_list` that are of type None are ignored.
+  Any of the entries of `t_list` that are of type `None` are ignored.
 
   This is the correct way to perform gradient clipping (for example, see
   R. Pascanu, T. Mikolov, and Y. Bengio, "On the difficulty of training
@@ -204,7 +219,7 @@ def clip_by_average_norm(t, clip_norm, name=None):
 
   Given a tensor `t`, and a maximum clip value `clip_norm`, this operation
   normalizes `t` so that its average L2-norm is less than or equal to
-  `clip_norm'. Specifically, if the average L2-norm is already less than or
+  `clip_norm`. Specifically, if the average L2-norm is already less than or
   equal to `clip_norm`, then `t` is not modified. If the average L2-norm is
   greater than `clip_norm`, then this operation returns a tensor of the same
   type and shape as `t` with its values set to:
@@ -229,7 +244,7 @@ def clip_by_average_norm(t, clip_norm, name=None):
 
     # Calculate L2-norm per element, clip elements by ratio of clip_norm to
     # L2-norm per element
-    n_element = math_ops.cast(array_ops.size(t), types.float32)
+    n_element = math_ops.cast(array_ops.size(t), dtypes.float32)
     l2norm_inv = math_ops.rsqrt(
         math_ops.reduce_sum(t * t, math_ops.range(array_ops.rank(t))))
     tclip = array_ops.identity(

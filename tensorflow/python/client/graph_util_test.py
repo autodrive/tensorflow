@@ -1,3 +1,18 @@
+# Copyright 2015 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 """Tests for tensorflow.python.client.graph_util."""
 from __future__ import absolute_import
 from __future__ import division
@@ -6,8 +21,8 @@ from __future__ import print_function
 import tensorflow.python.platform
 
 from tensorflow.python.client import graph_util
+from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
-from tensorflow.python.framework import types
 from tensorflow.python.ops import constant_op
 from tensorflow.python.ops import data_flow_ops
 # pylint: disable=unused-import
@@ -24,7 +39,7 @@ class DeviceFunctionsTest(googletest.TestCase):
       const_a = constant_op.constant(5.0)
       const_b = constant_op.constant(10.0)
       add_c = const_a + const_b
-      var_v = state_ops.variable_op([], dtype=types.float32)
+      var_v = state_ops.variable_op([], dtype=dtypes.float32)
       assign_c_to_v = state_ops.assign(var_v, add_c)
       const_string = constant_op.constant("on a cpu")
       dynamic_stitch_int_result = data_flow_ops.dynamic_stitch(
@@ -46,7 +61,7 @@ class DeviceFunctionsTest(googletest.TestCase):
       const_a = constant_op.constant(5.0)
       const_b = constant_op.constant(10.0)
       add_c = const_a + const_b
-      var_v = state_ops.variable_op([], dtype=types.float32)
+      var_v = state_ops.variable_op([], dtype=dtypes.float32)
       assign_c_to_v = state_ops.assign(var_v, add_c)
       dynamic_stitch_int_result = data_flow_ops.dynamic_stitch(
           [[0, 1, 2], [2, 3]], [[12, 23, 34], [1, 2]])
@@ -62,16 +77,16 @@ class DeviceFunctionsTest(googletest.TestCase):
 
   def testTwoDeviceFunctions(self):
     with ops.Graph().as_default() as g:
-      var_0 = state_ops.variable_op([1], dtype=types.float32)
+      var_0 = state_ops.variable_op([1], dtype=dtypes.float32)
       with g.device(graph_util.pin_variables_on_cpu):
-        var_1 = state_ops.variable_op([1], dtype=types.float32)
-      var_2 = state_ops.variable_op([1], dtype=types.float32)
-      var_3 = state_ops.variable_op([1], dtype=types.float32)
+        var_1 = state_ops.variable_op([1], dtype=dtypes.float32)
+      var_2 = state_ops.variable_op([1], dtype=dtypes.float32)
+      var_3 = state_ops.variable_op([1], dtype=dtypes.float32)
       with g.device(graph_util.pin_variables_on_cpu):
-        var_4 = state_ops.variable_op([1], dtype=types.float32)
+        var_4 = state_ops.variable_op([1], dtype=dtypes.float32)
         with g.device("/device:GPU:0"):
-          var_5 = state_ops.variable_op([1], dtype=types.float32)
-        var_6 = state_ops.variable_op([1], dtype=types.float32)
+          var_5 = state_ops.variable_op([1], dtype=dtypes.float32)
+        var_6 = state_ops.variable_op([1], dtype=dtypes.float32)
 
     self.assertEqual(var_0.device, None)
     self.assertEqual(var_1.device, "/device:CPU:0")

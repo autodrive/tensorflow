@@ -1,11 +1,26 @@
+# Copyright 2015 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 """Gradients for operators defined in data_flow_ops.py."""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 from six.moves import xrange  # pylint: disable=redefined-builtin
+from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
-from tensorflow.python.framework import types
 from tensorflow.python.ops import array_ops
 from tensorflow.python.ops import constant_op
 from tensorflow.python.ops import data_flow_ops
@@ -21,8 +36,8 @@ def _DynamicStitchGrads(op, grad):
   indices_grad = [None] * num_values
 
   def AsInt32(x):
-    return (x if op.inputs[0].dtype == types.int32 else
-            math_ops.cast(x, types.int32))
+    return (x if op.inputs[0].dtype == dtypes.int32 else
+            math_ops.cast(x, dtypes.int32))
   inputs = [AsInt32(op.inputs[i]) for i in xrange(num_values)]
   if isinstance(grad, ops.IndexedSlices):
     output_shape = array_ops.shape(op.outputs[0])
@@ -39,3 +54,8 @@ ops.NoGradient("QueueDequeue")
 ops.NoGradient("QueueDequeueMany")
 ops.NoGradient("QueueClose")
 ops.NoGradient("QueueSize")
+
+ops.NoGradient("Stack")
+ops.NoGradient("StackPush")
+ops.NoGradient("StackPop")
+ops.NoGradient("StackClose")

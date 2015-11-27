@@ -1,3 +1,18 @@
+# Copyright 2015 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 """Tests for various tensorflow.ops.tf."""
 from __future__ import absolute_import
 from __future__ import division
@@ -230,12 +245,10 @@ class TileTest(tf.test.TestCase):
         "uint8": (tf.uint8, int),
         "int32": (tf.int32, int),
         "int64": (tf.int64, int),
-        "string": (tf.string, str)
+        bytes: (tf.string, bytes)
     }
-    for dtype_np, v in types_to_test.items():
+    for dtype_np, (dtype_tf, cast) in types_to_test.items():
       with self.test_session():
-        dtype_tf = v[0]
-        cast = v[1]
         inp = np.random.rand(4, 1).astype(dtype_np)
         a = tf.constant([cast(x) for x in inp.ravel(order="C")],
                      shape=[4, 1],
@@ -244,7 +257,7 @@ class TileTest(tf.test.TestCase):
         result = tiled.eval()
       self.assertEqual(result.shape, (4, 4))
       self.assertEqual([4, 4], tiled.get_shape())
-      self.assertTrue((result == np.tile(inp, (1, 4))).all())
+      self.assertAllEqual(result, np.tile(inp, (1, 4)))
 
   def testInvalidDim(self):
     with self.test_session():

@@ -1,3 +1,18 @@
+# Copyright 2015 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 # pylint: disable=g-short-docstring-punctuation
 """## Encoding and Decoding
 
@@ -23,14 +38,14 @@ presently only support RGB, HSV, and GrayScale.
 The resizing Ops accept input images as tensors of several types.  They always
 output resized images as float32 tensors.
 
-The convenience function [resize_images()](#resize_images) supports both 4-D
+The convenience function [`resize_images()`](#resize_images) supports both 4-D
 and 3-D tensors as input and output.  4-D tensors are for batches of images,
 3-D tensors for individual images.
 
 Other resizing Ops only support 3-D individual images as input:
-[resize_area](#resize_area), [resize_bicubic](#resize_bicubic),
-[resize_bilinear](#resize_bilinear),
-[resize_nearest_neighbor](#resize_nearest_neighbor).
+[`resize_area`](#resize_area), [`resize_bicubic`](#resize_bicubic),
+[`resize_bilinear`](#resize_bilinear),
+[`resize_nearest_neighbor`](#resize_nearest_neighbor).
 
 Example:
 
@@ -39,10 +54,6 @@ Example:
 image = tf.image.decode_jpeg(...)
 resized_image = tf.image.resize_bilinear(image, [299, 299])
 ```
-
-<i>Maybe refer to the Queue examples that show how to add images to a Queue
-after resizing them to a fixed size, and how to dequeue batches of resized
-images from the Queue.</i>
 
 @@resize_images
 
@@ -94,11 +105,11 @@ import math
 
 import tensorflow.python.platform
 
+from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
 from tensorflow.python.framework import random_seed
 from tensorflow.python.framework import tensor_shape
 from tensorflow.python.framework import tensor_util
-from tensorflow.python.framework import types
 from tensorflow.python.ops import array_ops
 from tensorflow.python.ops import clip_ops
 from tensorflow.python.ops import common_shapes
@@ -339,7 +350,7 @@ def crop_to_bounding_box(image, offset_height, offset_width, target_height,
   This op cuts a rectangular part out of `image`. The top-left corner of the
   returned image is at `offset_height, offset_width` in `image`, and its
   lower-right corner is at
-  `offset_height + target_height, offset_width + target_width'.
+  `offset_height + target_height, offset_width + target_width`.
 
   Args:
     image: 3-D tensor with shape `[height, width, channels]`
@@ -452,17 +463,17 @@ def resize_images(images, new_height, new_width, method=ResizeMethod.BILINEAR):
 
   Resized images will be distorted if their original aspect ratio is not
   the same as `new_width`, `new_height`.  To avoid distortions see
-  [resize_image_with_crop_or_pad](#resize_image_with_crop_or_pad).
+  [`resize_image_with_crop_or_pad`](#resize_image_with_crop_or_pad).
 
   `method` can be one of:
 
-  *   <b>ResizeMethod.BILINEAR</b>: [Bilinear interpolation.]
+  *   <b>`ResizeMethod.BILINEAR`</b>: [Bilinear interpolation.]
       (https://en.wikipedia.org/wiki/Bilinear_interpolation)
-  *   <b>ResizeMethod.NEAREST_NEIGHBOR</b>: [Nearest neighbor interpolation.]
+  *   <b>`ResizeMethod.NEAREST_NEIGHBOR`</b>: [Nearest neighbor interpolation.]
       (https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation)
-  *   <b>ResizeMethod.BICUBIC</b>: [Bicubic interpolation.]
+  *   <b>`ResizeMethod.BICUBIC`</b>: [Bicubic interpolation.]
       (https://en.wikipedia.org/wiki/Bicubic_interpolation)
-  *   <b>ResizeMethod.AREA</b>: Area interpolation.
+  *   <b>`ResizeMethod.AREA`</b>: Area interpolation.
 
   Args:
     images: 4-D Tensor of shape `[batch, height, width, channels]` or
@@ -539,7 +550,7 @@ def per_image_whitening(image):
   height, width, depth = _ImageDimensions(image)
   num_pixels = height * width * depth
 
-  image = math_ops.cast(image, dtype=types.float32)
+  image = math_ops.cast(image, dtype=dtypes.float32)
   image_mean = math_ops.reduce_mean(image)
 
   variance = (math_ops.reduce_mean(math_ops.square(image)) -
@@ -577,7 +588,7 @@ def random_brightness(image, max_delta, seed=None):
     3-D tensor of images of shape `[height, width, channels]`
 
   Raises:
-    ValueError: if max_delta is negative.
+    ValueError: if `max_delta` is negative.
   """
   _Check3DImage(image)
 
@@ -649,8 +660,8 @@ def adjust_brightness(image, delta, min_value=None, max_value=None):
   with ops.op_scope([image, delta, min_value, max_value], None,
                     'adjust_brightness') as name:
     adjusted = math_ops.add(
-        math_ops.cast(image, types.float32),
-        math_ops.cast(delta, types.float32),
+        math_ops.cast(image, dtypes.float32),
+        math_ops.cast(delta, dtypes.float32),
         name=name)
     if image.dtype.is_integer:
       rounded = math_ops.round(adjusted)

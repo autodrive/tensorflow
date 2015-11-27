@@ -144,8 +144,8 @@ tf_cuda_library(
     name = "gpu_runtime",
     srcs = glob(
         [
-            "common_runtime/gpu/**/*.h",
-            "common_runtime/gpu/**/*.cc",
+            "common_runtime/gpu/*.h",
+            "common_runtime/gpu/*.cc",
         ],
         exclude = [
             "**/*main.cc",
@@ -607,6 +607,7 @@ filegroup(
         "//tensorflow/core:kernels/cwise_op_add.cc",
         "//tensorflow/core:kernels/cwise_op_div.cc",
         "//tensorflow/core:kernels/cwise_op_exp.cc",
+        "//tensorflow/core:kernels/cwise_op_less.cc",
         "//tensorflow/core:kernels/cwise_op_log.cc",
         "//tensorflow/core:kernels/cwise_op_mul.cc",
         "//tensorflow/core:kernels/cwise_op_sigmoid.cc",
@@ -614,6 +615,7 @@ filegroup(
         "//tensorflow/core:kernels/cwise_op_square.cc",
         "//tensorflow/core:kernels/cwise_op_sub.cc",
         "//tensorflow/core:kernels/cwise_op_tanh.cc",
+        "//tensorflow/core:kernels/dynamic_partition_op.cc",
         "//tensorflow/core:kernels/lrn_op.cc",
         "//tensorflow/core:kernels/maxpooling_op.cc",
         "//tensorflow/core:kernels/maxpooling_op.h",
@@ -626,9 +628,12 @@ filegroup(
         "//tensorflow/core:kernels/relu_op.h",
         "//tensorflow/core:kernels/softplus_op.cc",
         "//tensorflow/core:kernels/softplus_op.h",
+        "//tensorflow/core:kernels/stack_ops.cc",
         "//tensorflow/core:kernels/transpose_op.cc",
         "//tensorflow/core:kernels/transpose_op.h",
         "//tensorflow/core:kernels/transpose_op_functor.h",
+        "//tensorflow/core:kernels/where_op.cc",
+        "//tensorflow/core:kernels/where_op.h",
     ],
     visibility = ["//visibility:public"],
 )
@@ -669,6 +674,7 @@ cc_library(
     copts = [
         "-mfpu=neon",
         "-std=c++11",
+        "-O2",
     ],
     tags = [
         "manual",

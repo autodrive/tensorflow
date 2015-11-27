@@ -1,6 +1,6 @@
 # TensorBoard: Visualizing Learning
 
-The computations you'll use TensorBoard for - like training a massive
+The computations you'll use TensorFlow for - like training a massive
 deep neural network - can be complex and confusing. To make it easier to
 understand, debug, and optimize TensorFlow programs, we've included a suite of
 visualization tools called TensorBoard. You can use TensorBoard to visualize
@@ -36,7 +36,7 @@ this data by attaching
 [`histogram_summary`](../../api_docs/python/train.md#histogram_summary) ops to
 the gradient outputs and to the variable that holds your weights, respectively.
 
-For details on all of the summary operations avaiable, check out the docs on
+For details on all of the summary operations available, check out the docs on
 [summary operations]
 (../../api_docs/python/train.md#summary-operations).
 
@@ -59,7 +59,7 @@ Also, the `SummaryWriter` can optionally take a `GraphDef` in its constructor.
 If it receives one, then TensorBoard will visualize your graph as well.
 
 Now that you've modified your graph and have a `SummaryWriter`, you're ready to
-start runing your network! If you want, you could run the merged summary op
+start running your network! If you want, you could run the merged summary op
 every single step, and record a ton of training data. That's likely to be more
 data than you need, though. Instead, consider running the merged summary op
 every hundred steps or so, as in the following code example.

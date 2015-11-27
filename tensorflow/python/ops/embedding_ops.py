@@ -1,11 +1,26 @@
+# Copyright 2015 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 """Operations for embeddings."""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 from six.moves import xrange  # pylint: disable=redefined-builtin
+from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
-from tensorflow.python.framework import types
 from tensorflow.python.ops import array_ops
 from tensorflow.python.ops import data_flow_ops
 from tensorflow.python.ops import math_ops
@@ -28,7 +43,7 @@ def embedding_lookup(params, ids, name=None):
 
   Args:
     params: A list of tensors with the same shape and type.
-    ids: A `Tensor` with type `int32` containing the ids to be looked
+    ids: A `Tensor` with type `int32` or `int64` containing the ids to be looked
       up in `params`.
     name: A name for the operation (optional).
 
@@ -54,8 +69,8 @@ def embedding_lookup(params, ids, name=None):
       original_indices = math_ops.range(array_ops.size(flat_ids))
       # Compute flat_ids % partitions for each id
       ids_mod_p = flat_ids % np
-      if ids_mod_p.dtype != types.int32:
-        ids_mod_p = math_ops.cast(ids_mod_p, types.int32)
+      if ids_mod_p.dtype != dtypes.int32:
+        ids_mod_p = math_ops.cast(ids_mod_p, dtypes.int32)
       # Partition single list of ids based on ids % np into np separate lists
       plist = data_flow_ops.dynamic_partition(flat_ids, ids_mod_p, np)
       # Similarly, partition the original indices.
@@ -163,8 +178,8 @@ def embedding_lookup_sparse(params, sp_ids, sp_weights,
 
   with ops.op_scope(params + [sp_ids], name, "embedding_lookup_sparse") as name:
     segment_ids = sp_ids.indices[:, 0]
-    if segment_ids.dtype != types.int32:
-      segment_ids = math_ops.cast(segment_ids, types.int32)
+    if segment_ids.dtype != dtypes.int32:
+      segment_ids = math_ops.cast(segment_ids, dtypes.int32)
 
     ids = sp_ids.values
     if ignore_weights:

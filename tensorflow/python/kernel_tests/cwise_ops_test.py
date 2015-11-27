@@ -1,3 +1,18 @@
+# Copyright 2015 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 """Functional tests for coefficient-wise operations.
 """
 from __future__ import absolute_import
@@ -592,7 +607,7 @@ class BinaryOpTest(tf.test.TestCase):
     for func in [tf.add, tf.sub, tf.mul, tf.div, _ADD, _SUB, _MUL, _TRUEDIV,
                  _FLOORDIV]:
       with self.assertRaisesWithPredicateMatch(
-          ValueError, lambda e: "Incompatible shapes" in e.message):
+          ValueError, lambda e: "Incompatible shapes" in str(e)):
         func(tf.convert_to_tensor([10.0, 20.0, 30.0]),
              tf.convert_to_tensor([[40.0, 50.0], [60.0, 70.0]]))
 
@@ -722,7 +737,7 @@ class ComparisonOpTest(tf.test.TestCase):
     for t in dtypes:
       for f in funcs:
         with self.assertRaisesWithPredicateMatch(
-            ValueError, lambda e: "Incompatible shapes" in e.message):
+            ValueError, lambda e: "Incompatible shapes" in str(e)):
           f(x.astype(t), y.astype(t))
 
 
@@ -798,7 +813,7 @@ class LogicalOpTest(tf.test.TestCase):
     y = np.random.randint(0, 2, 6).astype(np.bool).reshape(3, 2, 1)
     for f in [tf.logical_and, tf.logical_or, tf.logical_xor]:
       with self.assertRaisesWithPredicateMatch(
-          ValueError, lambda e: "Incompatible shapes" in e.message):
+          ValueError, lambda e: "Incompatible shapes" in str(e)):
         f(x, y)
 
 

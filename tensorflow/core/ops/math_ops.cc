@@ -1,3 +1,18 @@
+/* Copyright 2015 Google Inc. All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+==============================================================================*/
+
 #include "tensorflow/core/framework/numeric_op.h"
 #include "tensorflow/core/framework/op.h"
 
@@ -640,7 +655,7 @@ that `segment_ids[j] == i`.
 segment_ids: A 1-D tensor whose rank is equal to the rank of `data`'s
 first dimension.  Values should be sorted and can be repeated.
 
-output: Has same shape as data, except for dimension_0 which
+output: Has same shape as data, except for dimension 0 which
 has size `k`, the number of segments.
 )doc");
 
@@ -669,7 +684,7 @@ values summed.
 segment_ids: A 1-D tensor whose rank is equal to the rank of `data`'s
 first dimension.  Values should be sorted and can be repeated.
 
-output: Has same shape as data, except for dimension_0 which
+output: Has same shape as data, except for dimension 0 which
 has size `k`, the number of segments.
 )doc");
 
@@ -697,7 +712,7 @@ that `segment_ids[j] == i`.
 segment_ids: A 1-D tensor whose rank is equal to the rank of `data`'s
 first dimension.  Values should be sorted and can be repeated.
 
-output: Has same shape as data, except for dimension_0 which
+output: Has same shape as data, except for dimension 0 which
 has size `k`, the number of segments.
 )doc");
 
@@ -725,7 +740,7 @@ that `segment_ids[j] == i`.
 segment_ids: A 1-D tensor whose rank is equal to the rank of `data`'s
 first dimension.  Values should be sorted and can be repeated.
 
-output: Has same shape as data, except for dimension_0 which
+output: Has same shape as data, except for dimension 0 which
 has size `k`, the number of segments.
 )doc");
 
@@ -752,7 +767,7 @@ that `segment_ids[j] == i`.
 segment_ids: A 1-D tensor whose rank is equal to the rank of `data`'s
 first dimension.  Values should be sorted and can be repeated.
 
-output: Has same shape as data, except for dimension_0 which
+output: Has same shape as data, except for dimension 0 which
 has size `k`, the number of segments.
 )doc");
 
@@ -787,7 +802,7 @@ If the sum is empty for a given segment ID `i`, `output[i] = 0`.
 segment_ids: A 1-D tensor whose rank is equal to the rank of `data`'s
 first dimension.
 
-output: Has same shape as data, except for dimension_0 which
+output: Has same shape as data, except for dimension 0 which
 has size `num_segments`.
 
 )doc");
@@ -806,7 +821,7 @@ Segmentation](../../api_docs/python/math_ops.md#segmentation) for an explanation
 of segments.
 
 Like `SegmentSum`, but `segment_ids` can have rank less than `data`'s first
-dimension, selecting a subset of dimension_0, specified by `indices`.
+dimension, selecting a subset of dimension 0, specified by `indices`.
 
 For example:
 
@@ -835,7 +850,7 @@ indices: A 1-D tensor. Has same rank as `segment_ids`.
 
 segment_ids: A 1-D tensor. Values should be sorted and can be repeated.
 
-output: Has same shape as data, except for dimension_0 which
+output: Has same shape as data, except for dimension 0 which
 has size `k`, the number of segments.
 )doc");
 
@@ -853,13 +868,13 @@ Segmentation](../../api_docs/python/math_ops.md#segmentation) for an explanation
 of segments.
 
 Like `SegmentMean`, but `segment_ids` can have rank less than `data`'s first
-dimension, selecting a subset of dimension_0, specified by `indices`.
+dimension, selecting a subset of dimension 0, specified by `indices`.
 
 indices: A 1-D tensor. Has same rank as `segment_ids`.
 
 segment_ids: A 1-D tensor. Values should be sorted and can be repeated.
 
-output: Has same shape as data, except for dimension_0 which
+output: Has same shape as data, except for dimension 0 which
 has size `k`, the number of segments.
 
 )doc");
@@ -874,13 +889,13 @@ REGISTER_OP("SparseSegmentMeanGrad")
     .Doc(R"doc(
 Computes gradients for SparseSegmentMean.
 
-Returns tensor "output" with same shape as grad, except for dimension_0 whose
+Returns tensor "output" with same shape as grad, except for dimension 0 whose
 value is output_dim0.
 
 grad: gradient propagated to the SparseSegmentMean op.
 indices: indices passed to the corresponding SparseSegmentMean op.
 segment_ids: segment_ids passed to the corresponding SparseSegmentMean op.
-output_dim0: dimension_0 of "data" passed to SparseSegmentMean op.
+output_dim0: dimension 0 of "data" passed to SparseSegmentMean op.
 )doc");
 
 REGISTER_OP("All")

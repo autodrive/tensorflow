@@ -1,10 +1,25 @@
+# Copyright 2015 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 """Maintain moving averages of parameters."""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
-from tensorflow.python.framework import types
 from tensorflow.python.ops import array_ops
 from tensorflow.python.ops import constant_op
 from tensorflow.python.ops import control_flow_ops
@@ -190,7 +205,7 @@ class ExponentialMovingAverage(object):
     if var_list is None:
       var_list = variables.trainable_variables()
     for var in var_list:
-      if var.dtype.base_dtype not in [types.float32, types.float64]:
+      if var.dtype.base_dtype not in [dtypes.float32, dtypes.float64]:
         raise TypeError("The variables must be float or double: %s" % var)
       if var in self._averages:
         raise ValueError("Moving average already computed for: %s" % var)
@@ -213,7 +228,7 @@ class ExponentialMovingAverage(object):
     with ops.name_scope(self._name) as scope:
       decay = ops.convert_to_tensor(self._decay, name="decay")
       if self._num_updates is not None:
-        num_updates = math_ops.cast(self._num_updates, types.float32,
+        num_updates = math_ops.cast(self._num_updates, dtypes.float32,
                                     name="num_updates")
         decay = math_ops.minimum(decay,
                                  (1.0 + num_updates) / (10.0 + num_updates))

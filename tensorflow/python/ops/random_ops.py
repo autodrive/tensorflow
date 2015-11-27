@@ -1,13 +1,28 @@
+# Copyright 2015 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 """Operations for generating random numbers."""
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
 from tensorflow.python.framework import tensor_shape
 from tensorflow.python.framework import tensor_util
-from tensorflow.python.framework import types
 from tensorflow.python.framework import random_seed
 from tensorflow.python.ops import common_shapes
 from tensorflow.python.ops import gen_random_ops
@@ -20,14 +35,14 @@ from tensorflow.python.ops.gen_random_ops import *
 def _ShapeTensor(shape):
   """Convert to an int32 or int64 tensor, defaulting to int32 if empty."""
   if isinstance(shape, (tuple, list)) and not shape:
-    dtype = types.int32
+    dtype = dtypes.int32
   else:
     dtype = None
   return ops.convert_to_tensor(shape, dtype=dtype, name="shape")
 
 
 # pylint: disable=protected-access
-def random_normal(shape, mean=0.0, stddev=1.0, dtype=types.float32,
+def random_normal(shape, mean=0.0, stddev=1.0, dtype=dtypes.float32,
                   seed=None, name=None):
   """Outputs random values from a normal distribution.
 
@@ -65,7 +80,7 @@ def random_normal(shape, mean=0.0, stddev=1.0, dtype=types.float32,
 ops.NoGradient("RandomStandardNormal")
 
 
-def truncated_normal(shape, mean=0.0, stddev=1.0, dtype=types.float32,
+def truncated_normal(shape, mean=0.0, stddev=1.0, dtype=dtypes.float32,
                      seed=None, name=None):
   """Outputs random values from a truncated normal distribution.
 
@@ -108,7 +123,7 @@ ops.NoGradient("TruncatedNormal")
 
 
 def random_uniform(shape, minval=0.0, maxval=1.0,
-                   dtype=types.float32, seed=None,
+                   dtype=dtypes.float32, seed=None,
                    name=None):
   """Outputs random values from a uniform distribution.
 
