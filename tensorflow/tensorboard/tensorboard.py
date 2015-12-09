@@ -33,32 +33,32 @@ import tensorflow.python.platform
 from tensorflow.python.platform import app
 from tensorflow.python.platform import flags
 from tensorflow.python.platform import logging
+from tensorflow.python.platform import resource_loader
 from tensorflow.python.platform import status_bar
 from tensorflow.python.summary import event_accumulator
 from tensorflow.python.summary import event_multiplexer
 from tensorflow.tensorboard import tensorboard_handler
 
-flags.DEFINE_string('logdir', None, """
-logdir specifies where TensorBoard will look to find TensorFlow event files
-that it can display. In the simplest case, logdir is a directory containing
-tfevents files. TensorBoard also supports comparing multiple TensorFlow
-executions: to do this, you can use directory whose subdirectories contain
-tfevents files, as in the following example:
+flags.DEFINE_string('logdir', None, """logdir specifies the directory where
+TensorBoard will look to find TensorFlow event files that it can display.
+TensorBoard will recursively walk the directory structure rooted at logdir,
+looking for .*tfevents.* files.
 
-foo/bar/logdir/
-foo/bar/logdir/mnist_1/events.out.tfevents.1444088766
-foo/bar/logdir/mnist_2/events.out.tfevents.1444090064
-
-You may also pass a comma seperated list of log directories, and you can
-assign names to individual log directories by putting a colon between the name
-and the path, as in
+You may also pass a comma seperated list of log directories, and TensorBoard
+will watch each directory. You can also assign names to individual log
+directories by putting a colon between the name and the path, as in
 
 tensorboard --logdir=name1:/path/to/logs/1,name2:/path/to/logs/2
 """)
+
 flags.DEFINE_boolean('debug', False, 'Whether to run the app in debug mode. '
                      'This increases log verbosity to DEBUG.')
-flags.DEFINE_string('host', '127.0.0.1', 'What host to listen to. Defaults to '
-                    'serving on localhost, set to 0.0.0.0 for remote access.')
+
+
+flags.DEFINE_string('host', '0.0.0.0', 'What host to listen to. Defaults to '
+                    'serving on 0.0.0.0, set to 127.0.0.1 (localhost) to'
+                    'disable remote access (also quiets security warnings).')
+
 flags.DEFINE_integer('port', 6006, 'What port to serve TensorBoard on.')
 
 FLAGS = flags.FLAGS
@@ -67,7 +67,7 @@ FLAGS = flags.FLAGS
 TENSORBOARD_SIZE_GUIDANCE = {
     event_accumulator.COMPRESSED_HISTOGRAMS: 500,
     event_accumulator.IMAGES: 4,
-    event_accumulator.SCALARS: 10000,
+    event_accumulator.SCALARS: 1000,
     event_accumulator.HISTOGRAMS: 1,
 }
 
@@ -114,13 +114,9 @@ class ThreadedHTTPServer(SocketServer.ThreadingMixIn,
 
 
 def main(unused_argv=None):
-  # Change current working directory to tensorflow/'s parent directory.
-  server_root = os.path.join(os.path.dirname(__file__),
-                             os.pardir, os.pardir)
-  os.chdir(server_root)
-
   if FLAGS.debug:
     logging.set_verbosity(logging.DEBUG)
+    logging.info('TensorBoard is in debug mode.')
 
   if not FLAGS.logdir:
     logging.error('A logdir must be specified. Run `tensorboard --help` for '
@@ -145,9 +141,15 @@ def main(unused_argv=None):
     logging.error('Tried to connect to port %d, but that address is in use.',
                   FLAGS.port)
     return -2
+  try:
+    tag = resource_loader.load_resource('tensorboard/TAG').strip()
+    logging.info('TensorBoard is tag: %s', tag)
+  except IOError:
+    logging.warning('Unable to read TensorBoard tag')
+    tag = ''
 
-  status_bar.SetupStatusBarInsideGoogle('TensorBoard', FLAGS.port)
-  print('Starting TensorBoard on port %d' % FLAGS.port)
+  status_bar.SetupStatusBarInsideGoogle('TensorBoard %s' % tag, FLAGS.port)
+  print('Starting TensorBoard %s on port %d' % (tag, FLAGS.port))
   print('(You can navigate to http://localhost:%d)' % FLAGS.port)
   server.serve_forever()
 

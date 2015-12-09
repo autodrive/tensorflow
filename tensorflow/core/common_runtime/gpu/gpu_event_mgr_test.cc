@@ -41,14 +41,18 @@ class TEST_EventMgrHelper {
   }
 
   void QueueTensors(perftools::gputools::Stream* stream,
-                    std::vector<Tensor>* tensors) {
+                    EventMgr::TensorReferenceVector* tensors) {
     mutex_lock l(em_->mu_);
     em_->QueueTensors(stream, tensors);
   }
 
   void PollEvents(bool is_dedicated_poller) {
-    mutex_lock l(em_->mu_);
-    em_->PollEvents(is_dedicated_poller);
+    EventMgr::ToFreeVector to_free;
+    {
+      mutex_lock l(em_->mu_);
+      em_->PollEvents(is_dedicated_poller, &to_free);
+    }
+    em_->FreeMemory(to_free);
   }
 
  private:
@@ -73,12 +77,12 @@ TEST(EventMgr, DelayedPolling) {
   EventMgr em(stream_exec);
   TEST_EventMgrHelper th(&em);
   EXPECT_EQ(0, th.queue_size());
-  std::vector<Tensor>* v = nullptr;
+  EventMgr::TensorReferenceVector* v = nullptr;
   std::unique_ptr<gpu::Stream> stream(new gpu::Stream(stream_exec));
   CHECK(stream.get());
   stream->Init();
   for (int i = 0; i < 5; ++i) {
-    v = new std::vector<Tensor>;
+    v = new EventMgr::TensorReferenceVector;
     th.QueueTensors(stream.get(), v);
     EXPECT_EQ(i + 1, th.queue_size());
     EXPECT_EQ(0, th.free_size());
@@ -88,7 +92,7 @@ TEST(EventMgr, DelayedPolling) {
   EXPECT_EQ(5, th.free_size());
   for (int j = 0; j < 2; ++j) {
     for (int i = 0; i < 5; ++i) {
-      v = new std::vector<Tensor>;
+      v = new EventMgr::TensorReferenceVector;
       th.QueueTensors(stream.get(), v);
       EXPECT_EQ(i + 1, th.queue_size());
       EXPECT_EQ(4 - i, th.free_size());
@@ -106,12 +110,12 @@ TEST(EventMgr, ImmediatePolling) {
   TEST_EventMgrHelper th(&em);
   EXPECT_EQ(0, th.queue_size());
   EXPECT_EQ(0, th.free_size());
-  std::vector<Tensor>* v = nullptr;
+  EventMgr::TensorReferenceVector* v = nullptr;
   std::unique_ptr<gpu::Stream> stream(new gpu::Stream(stream_exec));
   CHECK(stream.get());
   stream->Init();
   for (int i = 0; i < 5; ++i) {
-    v = new std::vector<Tensor>;
+    v = new EventMgr::TensorReferenceVector;
     em.ThenDeleteTensors(stream.get(), v);
     EXPECT_EQ(0, th.queue_size());
     EXPECT_EQ(1, th.free_size());
@@ -126,12 +130,12 @@ TEST(EventMgr, LongDelayedPolling) {
   TEST_EventMgrHelper th(&em);
   EXPECT_EQ(0, th.queue_size());
   EXPECT_EQ(0, th.free_size());
-  std::vector<Tensor>* v = nullptr;
+  EventMgr::TensorReferenceVector* v = nullptr;
   std::unique_ptr<gpu::Stream> stream(new gpu::Stream(stream_exec));
   CHECK(stream.get());
   stream->Init();
   for (int i = 0; i < 5; ++i) {
-    v = new std::vector<Tensor>;
+    v = new EventMgr::TensorReferenceVector;
     th.QueueTensors(stream.get(), v);
     EXPECT_EQ(1 + i, th.queue_size());
     EXPECT_EQ(0, th.free_size());
@@ -149,12 +153,12 @@ TEST(EventMgr, NonEmptyShutdown) {
   TEST_EventMgrHelper th(&em);
   EXPECT_EQ(0, th.queue_size());
   EXPECT_EQ(0, th.free_size());
-  std::vector<Tensor>* v = nullptr;
+  EventMgr::TensorReferenceVector* v = nullptr;
   std::unique_ptr<gpu::Stream> stream(new gpu::Stream(stream_exec));
   CHECK(stream.get());
   stream->Init();
   for (int i = 0; i < 5; ++i) {
-    v = new std::vector<Tensor>;
+    v = new EventMgr::TensorReferenceVector;
     th.QueueTensors(stream.get(), v);
     EXPECT_EQ(1 + i, th.queue_size());
     EXPECT_EQ(0, th.free_size());

@@ -264,7 +264,7 @@ Returns element-wise smallest integer in not less than x.
 
 #define BINARY_MORE()                              \
   Input("x: T").Input("y: T").Output("z: T").Attr( \
-      "T: {float, double, int8, int16, int32, complex64, int64}")
+      "T: {float, double, uint8, int8, int16, int32, int64, complex64}")
 
 #define BINARY_FEWER()                             \
   Input("x: T").Input("y: T").Output("z: T").Attr( \
@@ -293,7 +293,7 @@ Returns x * y element-wise.
 )doc");
 
 REGISTER_OP("Div")
-    .BINARY_FEWER()
+    .BINARY_MORE()
     .Doc(R"doc(
 Returns x / y element-wise.
 )doc");
@@ -649,7 +649,7 @@ Computes a tensor such that
 that `segment_ids[j] == i`.
 
 <div style="width:70%; margin:auto; margin-bottom:10px; margin-top:20px;">
-<img style="width:100%" src="../images/SegmentSum.png" alt>
+<img style="width:100%" src="../../images/SegmentSum.png" alt>
 </div>
 
 segment_ids: A 1-D tensor whose rank is equal to the rank of `data`'s
@@ -678,7 +678,7 @@ over `j` such that `segment_ids[j] == i` and `N` is the total number of
 values summed.
 
 <div style="width:70%; margin:auto; margin-bottom:10px; margin-top:20px;">
-<img style="width:100%" src="../images/SegmentMean.png" alt>
+<img style="width:100%" src="../../images/SegmentMean.png" alt>
 </div>
 
 segment_ids: A 1-D tensor whose rank is equal to the rank of `data`'s
@@ -706,7 +706,7 @@ Computes a tensor such that
 that `segment_ids[j] == i`.
 
 <div style="width:70%; margin:auto; margin-bottom:10px; margin-top:20px;">
-<img style="width:100%" src="../images/SegmentProd.png" alt>
+<img style="width:100%" src="../../images/SegmentProd.png" alt>
 </div>
 
 segment_ids: A 1-D tensor whose rank is equal to the rank of `data`'s
@@ -734,7 +734,7 @@ Computes a tensor such that
 that `segment_ids[j] == i`.
 
 <div style="width:70%; margin:auto; margin-bottom:10px; margin-top:20px;">
-<img style="width:100%" src="../images/SegmentMin.png" alt>
+<img style="width:100%" src="../../images/SegmentMin.png" alt>
 </div>
 
 segment_ids: A 1-D tensor whose rank is equal to the rank of `data`'s
@@ -761,7 +761,7 @@ Computes a tensor such that
 that `segment_ids[j] == i`.
 
 <div style="width:70%; margin:auto; margin-bottom:10px; margin-top:20px;">
-<img style="width:100%" src="../images/SegmentMax.png" alt>
+<img style="width:100%" src="../../images/SegmentMax.png" alt>
 </div>
 
 segment_ids: A 1-D tensor whose rank is equal to the rank of `data`'s
@@ -796,7 +796,7 @@ If the sum is empty for a given segment ID `i`, `output[i] = 0`.
 `num_segments` should equal the number of distinct segment IDs.
 
 <div style="width:70%; margin:auto; margin-bottom:10px; margin-top:20px;">
-<img style="width:100%" src="../images/UnsortedSegmentSum.png" alt>
+<img style="width:100%" src="../../images/UnsortedSegmentSum.png" alt>
 </div>
 
 segment_ids: A 1-D tensor whose rank is equal to the rank of `data`'s

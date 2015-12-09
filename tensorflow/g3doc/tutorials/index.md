@@ -90,12 +90,14 @@ stuff.
 [View Tutorial](../tutorials/mnist/download/index.md)
 
 
-## Visual Object Recognition
+## Image Recognition
 
-We will be releasing our state-of-the-art Inception object recognition model,
-complete and already trained.
+How to run object recognition using a convolutional neural network
+trained on ImageNet Challenge data and label set.
 
-COMING SOON
+[View Tutorial](../tutorials/image_recognition/index.md)
+
+We will soon be releasing code for training a state-of-the-art Inception model.
 
 
 ## Deep Dream Visual Hallucinations
@@ -105,21 +107,5 @@ version of the [Deep Dream](https://github.com/google/deepdream) neural network
 visual hallucination software.
 
 COMING SOON
-
-
-<div class='sections-order' style="display: none;">
-<!--
-<!-- mnist/beginners/index.md -->
-<!-- mnist/pros/index.md -->
-<!-- mnist/tf/index.md -->
-<!-- deep_cnn/index.md -->
-<!-- word2vec/index.md -->
-<!-- recurrent/index.md -->
-<!-- seq2seq/index.md -->
-<!-- mandelbrot/index.md -->
-<!-- pdes/index.md -->
-<!-- mnist/download/index.md -->
--->
-</div>
 
 

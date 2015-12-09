@@ -132,9 +132,19 @@ def _Relu6Grad(op, grad):
   return gen_nn_ops._relu6_grad(grad, op.inputs[0])
 
 
+@ops.RegisterGradient("Elu")
+def _EluGrad(op, grad):
+  return gen_nn_ops._elu_grad(grad, op.outputs[0])
+
+
 @ops.RegisterGradient("Softplus")
 def _SoftplusGrad(op, grad):
   return gen_nn_ops._softplus_grad(grad, op.inputs[0])
+
+
+@ops.RegisterGradient("Softsign")
+def _SoftsignGrad(op, grad):
+  return gen_nn_ops._softsign_grad(grad, op.inputs[0])
 
 
 @ops.RegisterGradient("ReluGrad")

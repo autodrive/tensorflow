@@ -22,11 +22,11 @@ from __future__ import print_function
 
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
-from tensorflow.python.ops import array_ops
 from tensorflow.python.ops import control_flow_ops
 from tensorflow.python.ops import gradients
 from tensorflow.python.ops import state_ops
 from tensorflow.python.ops import variables
+from tensorflow.python.training import slot_creator
 
 
 class Optimizer(object):
@@ -42,7 +42,7 @@ class Optimizer(object):
   # Create an optimizer with the desired parameters.
   opt = GradientDescentOptimizer(learning_rate=0.1)
   # Add Ops to the graph to minimize a cost by updating a list of variables.
-  # "cost" is a Tensor, and the list of variables contains variables.Variable
+  # "cost" is a Tensor, and the list of variables contains tf.Variable
   # objects.
   opt_op = opt.minimize(cost, <list of variables>)
   ```
@@ -199,7 +199,7 @@ class Optimizer(object):
 
     Args:
       loss: A Tensor containing the value to minimize.
-      var_list: Optional list of variables.Variable to update to minimize
+      var_list: Optional list of tf.Variable to update to minimize
         `loss`.  Defaults to the list of variables collected in the graph
         under the key `GraphKey.TRAINABLE_VARIABLES`.
       gate_gradients: How to gate the computation of gradients.  Can be
@@ -224,7 +224,9 @@ class Optimizer(object):
       var_list = variables.trainable_variables()
     for var in var_list:
       if not isinstance(var, variables.Variable):
-        raise TypeError("Argument is not a variables.Variable: %s" % var)
+        raise TypeError("Argument is not a tf.Variable: %s" % var)
+    if not var_list:
+      raise ValueError("No variables to optimize")
     grads = gradients.gradients(
         loss, var_list, gate_gradients=(gate_gradients == Optimizer.GATE_OP),
         aggregation_method=aggregation_method)
@@ -254,6 +256,7 @@ class Optimizer(object):
 
     Raises:
       TypeError: if `grads_and_vars` is malformed.
+      ValueError: if none of the variables have gradients.
     """
     # This is a default implementation of apply_gradients() that can be shared
     # by most optimizers.  It relies on the subclass implementing the following
@@ -265,10 +268,14 @@ class Optimizer(object):
             "Gradient must be a Tensor, IndexedSlices, or None: %s" % g)
       if not isinstance(v, variables.Variable):
         raise TypeError(
-            "Variable must be a variables.Variable: %s" % v)
+            "Variable must be a tf.Variable: %s" % v)
       if g is not None:
         self._assert_valid_dtypes([g, v])
-    self._create_slots([v for g, v in grads_and_vars if g is not None])
+    var_list = [v for g, v in grads_and_vars if g is not None]
+    if not var_list:
+      raise ValueError("No gradients provided for any variable: %s" %
+                       (grads_and_vars,))
+    self._create_slots(var_list)
     update_ops = []
     with ops.op_scope([], name, self._name) as name:
       self._prepare()
@@ -332,7 +339,7 @@ class Optimizer(object):
       dtype = t.dtype.base_dtype
       if dtype not in valid_dtypes:
         raise ValueError(
-            "Invalid type %s for %s, expected: %s." % (
+            "Invalid type %r for %s, expected: %s." % (
                 dtype, t.name, [v for v in valid_dtypes]))
 
   # --------------
@@ -411,6 +418,22 @@ class Optimizer(object):
   # Utility methods for subclasses.
   # --------------
 
+  def _slot_dict(self, slot_name):
+    """Returns a dict for caching slots created under the given name.
+
+    Args:
+      slot_name: Name for the slot.
+
+    Returns:
+      A dict that maps primary `Variable` objects to the slot created
+      for that variable, under the given slot name.
+    """
+    named_slots = self._slots.get(slot_name, None)
+    if named_slots is None:
+      named_slots = {}
+      self._slots[slot_name] = named_slots
+    return named_slots
+
   def _get_or_make_slot(self, var, val, slot_name, op_name):
     """Find or create a slot for a variable.
 
@@ -424,19 +447,10 @@ class Optimizer(object):
     Returns:
       A `Variable` object.
     """
-    named_slots = self._slots.get(slot_name, None)
-    if named_slots is None:
-      named_slots = {}
-      self._slots[slot_name] = named_slots
-    slot = named_slots.get(var, None)
-    if slot is None:
-      # Scope the slot name in the namespace of the Variable and
-      # create the slot on the same device as the variable.
-      with ops.name_scope(var.op.name + "/" + op_name) as scope:
-        with ops.device(var.device):
-          slot = variables.Variable(val, name=scope, trainable=False)
-      named_slots[var] = slot
-    return slot
+    named_slots = self._slot_dict(slot_name)
+    if var not in named_slots:
+      named_slots[var] = slot_creator.create_slot(var, val, op_name)
+    return named_slots[var]
 
   def _zeros_slot(self, var, slot_name, op_name):
     """Find or create a slot initialized with 0.0.
@@ -450,5 +464,7 @@ class Optimizer(object):
     Returns:
       A `Variable` object.
     """
-    val = array_ops.zeros(var.get_shape().as_list(), dtype=var.dtype)
-    return self._get_or_make_slot(var, val, slot_name, op_name)
+    named_slots = self._slot_dict(slot_name)
+    if var not in named_slots:
+      named_slots[var] = slot_creator.create_zeros_slot(var, op_name)
+    return named_slots[var]

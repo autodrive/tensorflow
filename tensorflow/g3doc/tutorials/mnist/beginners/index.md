@@ -3,7 +3,9 @@
 *This tutorial is intended for readers who are new to both machine learning and
 TensorFlow. If you already
 know what MNIST is, and what softmax (multinomial logistic) regression is,
-you might prefer this [faster paced tutorial](../../../tutorials/mnist/pros/index.md).*
+you might prefer this [faster paced tutorial](../pros/index.md).
+Be sure to [install TensorFlow](../../../get_started/os_setup.md) before
+starting either tutorial.*
 
 When one learns how to program, there's a tradition that the first thing you do
 is print "Hello World." Just like programming has Hello World, machine learning
@@ -13,7 +15,7 @@ MNIST is a simple computer vision dataset. It consists of images of handwritten
 digits like these:
 
 <div style="width:40%; margin:auto; margin-bottom:10px; margin-top:20px;">
-<img style="width:100%" src="img/MNIST.png">
+<img style="width:100%" src="../../../images/MNIST.png">
 </div>
 
 It also includes labels for each image, telling us which digit it is. For
@@ -37,19 +39,20 @@ The MNIST data is hosted on
 [Yann LeCun's website](http://yann.lecun.com/exdb/mnist/).  For your
 convenience, we've included some python code to download and install the data
 automatically. You can either download
-[the code](https://tensorflow.googlesource.com/tensorflow/+/master/tensorflow/g3doc/tutorials/mnist/input_data.py)
+[the code](https://tensorflow.googlesource.com/tensorflow/+/master/tensorflow/examples/tutorials/mnist/input_data.py)
 and import it as below, or simply copy and paste it in.
 
 ```python
-import input_data
+import tensorflow.examples.tutorials.mnist.input_data
 mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
 ```
 
-The downloaded data is split into two parts, 60,000 data points of training
-data (`mnist.train`) and 10,000 points of test data (`mnist.test`).  This
-split is very important: it's essential in machine learning that we
-have separate data which we don't learn from so that we can make sure
-that what we've learned actually generalizes!
+The downloaded data is split into three parts, 55,000 data points of training
+data (`mnist.train`), 10,000 points of test data (`mnist.test`), and 5,000
+points of validation data (`mnist.validation`). This split is very important:
+it's essential in machine learning that we have separate data which we don't
+learn from so that we can make sure that what we've learned actually
+generalizes!
 
 As mentioned earlier, every MNIST data point has two parts: an image of a
 handwritten digit and a corresponding label. We will call the images "xs" and
@@ -61,7 +64,7 @@ Each image is 28 pixels by 28 pixels. We can interpret this as a big array of
 numbers:
 
 <div style="width:50%; margin:auto; margin-bottom:10px; margin-top:20px;">
-<img style="width:100%" src="img/MNIST-Matrix.png">
+<img style="width:100%" src="../../../images/MNIST-Matrix.png">
 </div>
 
 We can flatten this array into a vector of 28x28 = 784 numbers. It doesn't
@@ -76,27 +79,28 @@ Isn't that bad? Well, the best computer vision methods do exploit this
 structure, and we will in later tutorials. But the simple method we will be
 using here, a softmax regression, won't.
 
-The result is that `mnist.train.images` is a tensor (an n-dimensional array) with a
-shape of `[60000, 784]`. The first dimension indexes the images and the second
-dimension indexes the pixels in each image. Each entry in the tensor is the
-pixel intensity between 0 and 1, for a particular pixel in a particular image.
+The result is that `mnist.train.images` is a tensor (an n-dimensional array)
+with a shape of `[55000, 784]`. The first dimension indexes the images and the
+second dimension indexes the pixels in each image. Each entry in the tensor is
+the pixel intensity between 0 and 1, for a particular pixel in a particular
+image.
 
 <div style="width:40%; margin:auto; margin-bottom:10px; margin-top:20px;">
-<img style="width:100%" src="img/mnist-train-xs.png">
+<img style="width:100%" src="../../../images/mnist-train-xs.png">
 </div>
 
 The corresponding labels in MNIST are numbers between 0 and 9, describing
 which digit a given image is of.
 For the purposes of this tutorial, we're going to want our labels
 as "one-hot vectors". A one-hot vector is a vector which is 0 in most
-dimensions, and 1 in a single dimension. In this case, the \\(n\\)th digit will be
-represented as a vector which is 1 in the \\(n\\)th dimensions. For example, 3
-would be \\([0,0,0,1,0,0,0,0,0,0]\\).
+dimensions, and 1 in a single dimension. In this case, the \\(n\\)th digit will
+be represented as a vector which is 1 in the \\(n\\)th dimensions. For example,
+3 would be \\([0,0,0,1,0,0,0,0,0,0]\\).
 Consequently, `mnist.train.labels` is a
-`[60000, 10]` array of floats.
+`[55000, 10]` array of floats.
 
 <div style="width:40%; margin:auto; margin-bottom:10px; margin-top:20px;">
-<img style="width:100%" src="img/mnist-train-ys.png">
+<img style="width:100%" src="../../../images/mnist-train-ys.png">
 </div>
 
 We're now ready to actually make our model!
@@ -127,7 +131,7 @@ classes. Red represents negative weights, while blue represents positive
 weights.
 
 <div style="width:40%; margin:auto; margin-bottom:10px; margin-top:20px;">
-<img style="width:100%" src="img/softmax-weights.png">
+<img style="width:100%" src="../../../images/softmax-weights.png">
 </div>
 
 We also add some extra evidence called a bias. Basically, we want to be able
@@ -174,13 +178,13 @@ although with a lot more \\(x\\)s. For each output, we compute a weighted sum of
 the \\(x\\)s, add a bias, and then apply softmax.
 
 <div style="width:55%; margin:auto; margin-bottom:10px; margin-top:20px;">
-<img style="width:100%" src="img/softmax-regression-scalargraph.png">
+<img style="width:100%" src="../../../images/softmax-regression-scalargraph.png">
 </div>
 
 If we write that out as equations, we get:
 
 <div style="width:52%; margin-left:25%; margin-bottom:10px; margin-top:20px;">
-<img style="width:100%" src="img/softmax-regression-scalarequation.png">
+<img style="width:100%" src="../../../images/softmax-regression-scalarequation.png">
 </div>
 
 We can "vectorize" this procedure, turning it into a matrix multiplication
@@ -188,7 +192,7 @@ and vector addition. This is helpful for computational efficiency. (It's also
 a useful way to think.)
 
 <div style="width:50%; margin:auto; margin-bottom:10px; margin-top:20px;">
-<img style="width:100%" src="img/softmax-regression-vectorequation.png">
+<img style="width:100%" src="../../../images/softmax-regression-vectorequation.png">
 </div>
 
 More compactly, we can just write:
@@ -224,13 +228,13 @@ We describe these interacting operations by manipulating symbolic variables.
 Let's create one:
 
 ```python
-x = tf.placeholder("float", [None, 784])
+x = tf.placeholder(tf.float32, [None, 784])
 ```
 
 `x` isn't a specific value. It's a `placeholder`, a value that we'll input when
 we ask TensorFlow to run a computation. We want to be able to input any number
 of MNIST images, each flattened into a 784-dimensional vector. We represent
-this as a 2d tensor of floating point numbers, with a shape `[None, 784]`.
+this as a 2-D tensor of floating-point numbers, with a shape `[None, 784]`.
 (Here `None` means that a dimension can be of any length.)
 
 We also need the weights and biases for our model. We could imagine treating
@@ -242,7 +246,7 @@ operations. It can be used and even modified by the computation. For machine
 learning applications, one generally has the model parameters be `Variable`s.
 
 ```python
-W = tf.Variable(tf.zeros([784,10]))
+W = tf.Variable(tf.zeros([784, 10]))
 b = tf.Variable(tf.zeros([10]))
 ```
 
@@ -259,10 +263,10 @@ to the output.
 We can now implement our model. It only takes one line!
 
 ```python
-y = tf.nn.softmax(tf.matmul(x,W) + b)
+y = tf.nn.softmax(tf.matmul(x, W) + b)
 ```
 
-First, we multiply `x` by `W` with the expression `tf.matmul(x,W)`. This is
+First, we multiply `x` by `W` with the expression `tf.matmul(x, W)`. This is
 flipped from when we multiplied them in our equation, where we had \\(Wx\\), as a
 small trick
 to deal with `x` being a 2D tensor with multiple inputs. We then add `b`, and
@@ -301,7 +305,7 @@ To implement cross-entropy we need to first add a new placeholder to input
 the correct answers:
 
 ```python
-y_ = tf.placeholder("float", [None,10])
+y_ = tf.placeholder(tf.float32, [None, 10])
 ```
 
 Then we can implement the cross-entropy, \\(-\sum y'\log(y)\\):

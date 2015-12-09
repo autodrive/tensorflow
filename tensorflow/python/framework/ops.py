@@ -37,7 +37,9 @@ from tensorflow.python.framework import device as pydev
 from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import registry
 from tensorflow.python.framework import tensor_shape
+from tensorflow.python.framework import versions
 from tensorflow.python.util import compat
+from tensorflow.python.platform import logging
 
 
 def _convert_stack(stack):
@@ -92,6 +94,22 @@ def _extract_stack():
     f = f.f_back
   ret.reverse()
   return ret
+
+
+def _as_graph_element(obj):
+  """Convert `obj` to a graph element if possible, otherwise return `None`.
+
+  Args:
+    obj: Object to convert.
+
+  Returns:
+    The result of `obj._as_graph_element()` if that method is available;
+        otherwise `None`.
+  """
+  conv_fn = getattr(obj, "_as_graph_element", None)
+  if conv_fn and callable(conv_fn):
+    return conv_fn()
+  return None
 
 
 class Tensor(object):
@@ -442,8 +460,8 @@ class Tensor(object):
     return _eval_using_default_session(self, feed_dict, self.graph, session)
 
 
-def _TensorTensorConversionFunction(t, dtype=None, name=None):
-  _ = name
+def _TensorTensorConversionFunction(t, dtype=None, name=None, as_ref=False):
+  _ = name, as_ref
   if dtype and not dtype.is_compatible_with(t.dtype):
     raise ValueError(
         "Tensor conversion requested dtype %s for Tensor with dtype %s: %r"
@@ -455,7 +473,7 @@ _tensor_conversion_func_registry = {
     0: [(Tensor, _TensorTensorConversionFunction)]}
 
 
-def convert_to_tensor(value, dtype=None, name=None):
+def convert_to_tensor(value, dtype=None, name=None, as_ref=False):
   """Converts the given `value` to a `Tensor`.
 
   This function converts Python objects of various types to `Tensor`
@@ -487,6 +505,7 @@ def convert_to_tensor(value, dtype=None, name=None):
     dtype: Optional element type for the returned tensor. If missing, the
       type is inferred from the type of `value`.
     name: Optional name to use if a new `Tensor` is created.
+    as_ref: True if we want the result as a ref tensor.
 
   Returns:
     A `Tensor` based on `value`.
@@ -502,7 +521,7 @@ def convert_to_tensor(value, dtype=None, name=None):
   for _, funcs_at_priority in sorted(_tensor_conversion_func_registry.items()):
     for base_type, conversion_func in funcs_at_priority:
       if isinstance(value, base_type):
-        ret = conversion_func(value, dtype=dtype, name=name)
+        ret = conversion_func(value, dtype=dtype, name=name, as_ref=as_ref)
         if not isinstance(ret, Tensor):
           raise RuntimeError(
               "%sConversion function %r for type %s returned non-Tensor: %r"
@@ -519,7 +538,8 @@ def convert_to_tensor(value, dtype=None, name=None):
                   % (error_prefix, value, type(value)))
 
 
-def convert_to_tensor_or_indexed_slices(value, dtype=None, name=None):
+def convert_to_tensor_or_indexed_slices(value, dtype=None, name=None,
+                                        as_ref=False):
   """Converts the given object to a `Tensor` or an `IndexedSlices`.
 
   If `value` is an `IndexedSlices` it is returned
@@ -532,6 +552,7 @@ def convert_to_tensor_or_indexed_slices(value, dtype=None, name=None):
     dtype: (Optional.) The required `DType` of the returned `Tensor` or
       `IndexedSlices`.
     name: (Optional.) A name to use if a new `Tensor` is created.
+    as_ref: True if the caller wants the results as ref tensors.
 
   Returns:
     An `Tensor` or an `IndexedSlices` based on `value`.
@@ -546,10 +567,11 @@ def convert_to_tensor_or_indexed_slices(value, dtype=None, name=None):
           % (dtypes.as_dtype(dtype).name, value.dtype.name, str(value)))
     return value
   else:
-    return convert_to_tensor(value, dtype, name)
+    return convert_to_tensor(value, dtype=dtype, name=name, as_ref=as_ref)
 
 
-def convert_n_to_tensor_or_indexed_slices(values, dtype=None, name=None):
+def convert_n_to_tensor_or_indexed_slices(values, dtype=None, name=None,
+                                          as_ref=False):
   """Converts `values` to a list of `Tensor` or `IndexedSlices` objects.
 
   Args:
@@ -557,10 +579,10 @@ def convert_n_to_tensor_or_indexed_slices(values, dtype=None, name=None):
       by `convert_to_tensor()`.
     dtype: (Optional.) The required `DType` of the returned `Tensor`
       `IndexedSlices`.
-
     name: (Optional.) A name prefix to used when a new `Tensor` is
       created, in which case element `i` will be given the name `name
       + '_' + i`.
+    as_ref: True if the caller wants the results as ref tensors.
 
   Returns:
     A list of `Tensor` and/or `IndexedSlices` objects.
@@ -580,7 +602,8 @@ def convert_n_to_tensor_or_indexed_slices(values, dtype=None, name=None):
     else:
       n = None if name is None else "%s_%d" % (name, i)
       ret.append(
-          convert_to_tensor_or_indexed_slices(value, dtype=dtype, name=n))
+          convert_to_tensor_or_indexed_slices(value, dtype=dtype, name=n,
+                                              as_ref=as_ref))
   return ret
 
 
@@ -590,12 +613,15 @@ def register_tensor_conversion_function(base_type, conversion_func,
 
   The conversion function must have the following signature:
 
-      def conversion_func(value, dtype=None, name=None):
+      def conversion_func(value, dtype=None, name=None, as_ref=False):
         # ...
 
   It must return a Tensor with the given dtype if specified. If the
   conversion function creates a new Tensor, it should use the given
   name if specified. All exceptions will be propagated to the caller.
+
+  If `as_ref` is true, the function must return a Tensor reference,
+  such as a VariableOp.
 
   NOTE: The conversion functions will execute in order of priority,
     followed by order of registration. To ensure that a conversion
@@ -671,6 +697,7 @@ class IndexedSlices(object):
 
   def __init__(self, values, indices, dense_shape=None):
     """Creates an `IndexedSlices`."""
+    _get_graph_from_inputs([values, indices, dense_shape])
     self._values = values
     self._indices = indices
     self._dense_shape = dense_shape
@@ -710,30 +737,15 @@ class IndexedSlices(object):
     """The `DType` of elements in this tensor."""
     return self.values.dtype
 
+  @property
+  def graph(self):
+    """The `Graph` that contains the values, indices, and shape tensors."""
+    return self._values.graph
+
   def __str__(self):
-    return "IndexedSlices(indices=%s, values=%s)" % (
-        self._indices, self._values)
-
-
-def assert_same_graph(items, expected_graph=None):
-  """Asserts all items are from the same graph.
-
-  Args:
-    items: List of graph items (e.g., Variable, Tensor, SparseTensor,
-        Operation, or IndexedSlices).
-    expected_graph: Expected graph. If not specified, assert all tensors are
-        from the same graph.
-  Returns:
-    items, for chaining.
-  Raises:
-    ValueError: If any graphs do not match.
-  """
-  for item in items:
-    if not expected_graph:
-      expected_graph = item.graph
-    elif expected_graph != item.graph:
-      raise ValueError("Items must be from the same graph.")
-  return items
+    return "IndexedSlices(indices=%s, values=%s%s)" % (
+        self._indices, self._values,
+        (", dense_shape=%s" % self._dense_shape) if self._dense_shape else "")
 
 
 class SparseTensor(object):
@@ -762,23 +774,23 @@ class SparseTensor(object):
   ```
 
   By convention, `indices` should be sorted in row-major order (or equivalently
-  lexigraphic order on the tuples `indices[i]`).  This is not enforced when
-  `SparseTensor` objects are constructed, but most Ops assume correct ordering.
+  lexicographic order on the tuples `indices[i]`).  This is not enforced when
+  `SparseTensor` objects are constructed, but most ops assume correct ordering.
   If the ordering is wrong, it can be fixed by calling `sparse_reorder` on the
   misordered `SparseTensor`.
 
   Example: The sparse tensor
 
   ```python
-    SparseTensor(values=[1, 2], indices=[[0, 0], [1, 2]], shape=[3, 4])
+  SparseTensor(values=[1, 2], indices=[[0, 0], [1, 2]], shape=[3, 4])
   ```
 
   represents the dense tensor
 
   ```python
-    [[1, 0, 0, 0]
-     [0, 0, 2, 0]
-     [0, 0, 0, 0]]
+  [[1, 0, 0, 0]
+   [0, 0, 2, 0]
+   [0, 0, 0, 0]]
   ```
 
   @@__init__
@@ -795,14 +807,18 @@ class SparseTensor(object):
     Args:
       indices: A 2-D int64 tensor of shape `[N, ndims]`.
       values: A 1-D tensor of any type and shape `[N]`.
-     dense_shape: A 1-D int64 tensor of shape `[ndims]`.
+      shape: A 1-D int64 tensor of shape `[ndims]`.
 
     Returns:
       A `SparseTensor`
     """
     with op_scope([indices, values, shape], None, "SparseTensor"):
       indices = convert_to_tensor(indices, name="indices")
-      values = convert_to_tensor(values, name="values")
+      # Always pass as_ref=True because we want to be able to update
+      # values later if it is a VariableOp.
+      # TODO(touts): Consider adding mutable_values() when 'values'
+      # is a VariableOp and updating users of SparseTensor.
+      values = convert_to_tensor(values, name="values", as_ref=True)
       shape = convert_to_tensor(shape, name="shape")
     self._indices = indices
     self._values = values
@@ -987,7 +1003,9 @@ class Operation(object):
     self._graph = g
     if inputs is None:
       inputs = []
-    self._inputs = inputs
+    elif not isinstance(inputs, list):
+      raise TypeError("inputs needs to be a list of Tensors: %s" % inputs)
+    self._inputs = list(inputs)  # Defensive copy.
     for a in self._inputs:
       if not isinstance(a, Tensor):
         raise TypeError("input needs to be a Tensor: %s" % a)
@@ -1091,7 +1109,7 @@ class Operation(object):
     """
     if not isinstance(tensor, Tensor):
       raise TypeError("tensor must be a Tensor: %s" % tensor)
-    assert_same_graph([self, tensor])
+    _assert_same_graph(self, tensor)
     if dtype is None:
       dtype = tensor.dtype
     else:
@@ -1123,7 +1141,7 @@ class Operation(object):
     """
     if not isinstance(tensor, Tensor):
       raise TypeError("tensor must be a Tensor: %s" % tensor)
-    assert_same_graph([self, tensor])
+    _assert_same_graph(self, tensor)
     if dtype is None:
       dtype = tensor.dtype
     else:
@@ -1151,7 +1169,7 @@ class Operation(object):
     """
     if not isinstance(op, Operation):
       raise TypeError("op must be an Operation: %s" % op)
-    assert_same_graph([self, op])
+    _assert_same_graph(self, op)
     self._control_inputs.append(op)
     self._recompute_node_def()
 
@@ -1391,6 +1409,7 @@ def get_gradient_function(op):
 _shape_registry = registry.Registry("shape functions")
 _default_shape_function_registry = registry.Registry("default shape functions")
 
+
 class RegisterShape(object):
   """A decorator for registering the shape function for an op type.
 
@@ -1530,6 +1549,7 @@ class Graph(object):
   @@seed
   @@unique_name
   @@version
+  @@graph_def_version
 
   @@create_op
   @@gradient_override_map
@@ -1570,6 +1590,8 @@ class Graph(object):
     self._finalized = False
     # Functions defined in the graph
     self._functions = collections.OrderedDict()
+    # Default GraphDef version
+    self._graph_def_version = versions.GRAPH_DEF_VERSION
 
   def _check_not_finalized(self):
     """Check if the graph is finalized.
@@ -1605,8 +1627,35 @@ class Graph(object):
 
   @property
   def version(self):
-    """Returns a version number that increases as ops are added to the graph."""
+    """Returns a version number that increases as ops are added to the graph.
+
+    Note that this is unrelated to the
+    [GraphDef version](#Graph.graph_def_version).
+    """
     return self._next_id_counter
+
+  @property
+  def graph_def_version(self):
+    """The GraphDef version of this graph.
+
+    For details on the meaning of each version, see [`GraphDef`]
+    (https://tensorflow.googlesource.com/tensorflow/+/master/tensorflow/core/framework/graph.proto).
+    """
+    return self._graph_def_version
+
+  @graph_def_version.setter
+  def graph_def_version(self, version):
+    if not (versions.GRAPH_DEF_VERSION_MIN <= version <=
+            versions.GRAPH_DEF_VERSION_MAX):
+      low = version < versions.GRAPH_DEF_VERSION_MIN
+      raise ValueError(
+          "GraphDef version %d is %s supported: TensorFlow %s needs %d <= "
+          "version <= %d.  Please %s." %
+          (version, "no longer" if low else "not yet",
+           versions.__version__, versions.GRAPH_DEF_VERSION_MIN,
+           versions.GRAPH_DEF_VERSION_MAX,
+           "regenerate your graph" if low else "upgrade TensorFlow"))
+    self._graph_def_version = version
 
   @property
   def seed(self):
@@ -1669,6 +1718,7 @@ class Graph(object):
       ValueError: If the `graph_def` would be too large.
     """
     graph = graph_pb2.GraphDef()
+    graph.version = self._graph_def_version
     bytesize = 0
     for op_id in sorted(self._nodes_by_id):
       op = self._nodes_by_id[op_id]
@@ -1840,9 +1890,7 @@ class Graph(object):
     else:
       raise ValueError("allow_tensor and allow_operation can't both be False.")
 
-    conv_fn = getattr(obj, "_as_graph_element", None)
-    if conv_fn and callable(conv_fn):
-      obj = conv_fn()
+    obj = _as_graph_element(obj) or obj
 
     # If obj appears to be a name...
     if isinstance(obj, compat.bytes_or_text_types):
@@ -1924,6 +1972,7 @@ class Graph(object):
       A list of Operations.
     """
     return list(self._nodes_by_id.values())
+
   def get_operation_by_name(self, name):
     """Returns the `Operation` with the given `name`.
 
@@ -2045,7 +2094,7 @@ class Graph(object):
     else:
       c = []
       for item in self._collections.get(name, list()):
-        if hasattr(item, 'name') and item.name.startswith(scope):
+        if hasattr(item, "name") and item.name.startswith(scope):
           c.append(item)
       return c
 
@@ -2329,16 +2378,54 @@ class Graph(object):
     """Context manager for `control_dependencies()`."""
 
     def __init__(self, graph, control_inputs):
+      """Create a new `_ControlDependenciesController`.
+
+      A `_ControlDependenciesController` is the context manager for
+      `with tf.control_dependencies()` blocks.  These normally nest,
+      as described in the documentation for `control_dependencies()`.
+
+      The `control_inputs` argument list control dependencies that must be
+      added to the current set of control dependencies.  Because of
+      uniquification the set can be empty even if the caller passed a list of
+      ops.  The special value `None` indicates that we want to start a new
+      empty set of control dependencies instead of extending the current set.
+
+      In that case we also clear the current control flow context, which is an
+      additional mechanism to add control dependencies.
+
+      Args:
+        graph: The graph that this controller is  managing.
+        control_inputs: List of ops to use as control inputs in addition
+          to the current control dependencies.  None to indicate that
+          the dependencies should be cleared.
+      """
       self._graph = graph
-      self._control_inputs = control_inputs
+      if control_inputs is None:
+        self._control_inputs = []
+        self._new_stack = True
+      else:
+        self._control_inputs = control_inputs
+        self._new_stack = False
       self._seen_nodes = set()
+      self._old_stack = None
+      self._old_control_flow_context = None
 
 # pylint: disable=protected-access
     def __enter__(self):
+      if self._new_stack:
+        # Clear the control_dependencies graph.
+        self._old_stack = self._graph._control_dependencies_stack
+        self._graph._control_dependencies_stack = []
+        # Clear the control_flow_context too.
+        self._old_control_flow_context = self._graph._get_control_flow_context()
+        self._graph._set_control_flow_context(None)
       self._graph._push_control_dependencies_controller(self)
 
     def __exit__(self, unused_type, unused_value, unused_traceback):
       self._graph._pop_control_dependencies_controller(self)
+      if self._new_stack:
+        self._graph._control_dependencies_stack = self._old_stack
+        self._graph._set_control_flow_context(self._old_control_flow_context)
 # pylint: enable=protected-access
 
     @property
@@ -2429,9 +2516,21 @@ class Graph(object):
 
     ```python
     with g.control_dependencies([a, b]):
-      # Ops declared here run after `a` and `b`.
+      # Ops constructed here run after `a` and `b`.
       with g.control_dependencies([c, d]):
-        # Ops declared here run after `a`, `b`, `c`, and `d`.
+        # Ops constructed here run after `a`, `b`, `c`, and `d`.
+    ```
+
+    You can pass None to clear the control dependencies:
+
+    ```python
+    with g.control_dependencies([a, b]):
+      # Ops constructed here run after `a` and `b`.
+      with g.control_dependencies(None):
+        # Ops constructed here run normally, not waiting for either `a` or `b`.
+        with g.control_dependencies([c, d]):
+          # Ops constructed here run after `c` and `d`, also not waiting
+          # for either `a` or `b`.
     ```
 
     *N.B.* The control dependencies context applies *only* to ops that
@@ -2457,9 +2556,10 @@ class Graph(object):
     ```
 
     Args:
-      control_inputs: A list of `Operation` or `Tensor` objects, which
+      control_inputs: A list of `Operation` or `Tensor` objects which
         must be executed or computed before running the operations
-        defined in the context.
+        defined in the context.  Can also be `None` to clear the control
+        dependencies.
 
     Returns:
      A context manager that specifies control dependencies for all
@@ -2469,6 +2569,8 @@ class Graph(object):
       TypeError: If `control_inputs` is not a list of `Operation` or
         `Tensor` objects.
     """
+    if control_inputs is None:
+      return self._ControlDependenciesController(self, None)
     # First convert the inputs to ops, and deduplicate them.
     # NOTE(mrry): Other than deduplication, we do not currently track direct
     #   or indirect dependencies between control_inputs, which may result in
@@ -2654,9 +2756,10 @@ def control_dependencies(control_inputs):
   for more details.
 
   Args:
-    control_inputs: A list of `Operation` or `Tensor` objects, which
+    control_inputs: A list of `Operation` or `Tensor` objects which
       must be executed or computed before running the operations
-      defined in the context.
+      defined in the context.  Can also be `None` to clear the control
+      dependencies.
 
   Returns:
    A context manager that specifies control dependencies for all
@@ -2899,6 +3002,21 @@ def get_default_graph():
   return _default_graph_stack.get_default()
 
 
+def _assert_same_graph(original_item, item):
+  """Fail if the 2 items are from different graphs.
+
+  Args:
+    original_item: Original item to check against.
+    item: Item to check.
+
+  Raises:
+    ValueError: if graphs do not match.
+  """
+  if original_item.graph is not item.graph:
+    raise ValueError(
+        "%s must be from the same graph as %s." % (item, original_item))
+
+
 def _get_graph_from_inputs(op_input_list, graph=None):
   """Returns the appropriate graph to use for the given inputs.
 
@@ -2914,8 +3032,8 @@ def _get_graph_from_inputs(op_input_list, graph=None):
      "op_input_list", we attempt to use the default graph.
 
   Args:
-    op_input_list: A list of inputs to an operation, which may include Tensor
-      and Operation objects.
+    op_input_list: A list of inputs to an operation, which may include `Tensor`,
+      `Operation`, and other objects that may be converted to a graph element.
     graph: (Optional) The explicit graph to use.
 
   Raises:
@@ -2929,37 +3047,35 @@ def _get_graph_from_inputs(op_input_list, graph=None):
     The appropriate graph to use for the given inputs.
   """
   op_input_list = tuple(op_input_list)  # Handle generators correctly
+  if graph and not isinstance(graph, Graph):
+    raise TypeError("Input graph needs to be a Graph: %s" % graph)
 
-  # 1. If the graph is specified explicitly, we validate that all of the inputs
-  #    are compatible with that graph.
-  if graph is not None:
-    if not isinstance(graph, Graph):
-      raise TypeError("Input graph needs to be a Graph: %s" % graph)
-    for op_input in op_input_list:
-      if isinstance(op_input, Operation):
-        if op_input.graph is not graph:
-          raise ValueError("Operation %s is not from the passed-in graph"
-                           % op_input)
-      elif isinstance(op_input, Tensor):
-        if op_input.graph is not graph:
-          raise ValueError("Tensor %s is not from the passed-in graph"
-                           % op_input)
-    return graph
-
-  # 2. Otherwise, we attempt to select a graph from one of the Operation-
-  #    or Tensor-valued inputs.
-  original_input = None
+  # 1. We validate that all of the inputs are from the same graph. This is
+  #    either the supplied graph parameter, or the first one selected from one
+  #    the graph-element-valued inputs. In the latter case, we hold onto
+  #    that input in original_graph_element so we can provide a more
+  #    informative error if a mismatch is found.
+  original_graph_element = None
   for op_input in op_input_list:
-    if isinstance(op_input, (Operation, Tensor)):
-      if original_input is None:
-        original_input = op_input
-      else:
-        assert_same_graph([original_input, op_input])
-  if original_input is not None:
-    return original_input.graph
+    # Determine if this is a valid graph_element.
+    graph_element = None
+    if isinstance(op_input, (Operation, Tensor, SparseTensor, IndexedSlices)):
+      graph_element = op_input
+    else:
+      graph_element = _as_graph_element(op_input)
 
-  # 3. If all else fails, we use the default graph, which is always there.
-  return get_default_graph()
+    if graph_element:
+      if not graph:
+        original_graph_element = graph_element
+        graph = graph_element.graph
+      elif original_graph_element:
+        _assert_same_graph(original_graph_element, graph_element)
+      elif graph_element.graph is not graph:
+        raise ValueError(
+            "%s is not from the passed-in graph." % graph_element)
+
+  # 2. If all else fails, we use the default graph, which is always there.
+  return graph or get_default_graph()
 
 
 class GraphKeys(object):
@@ -2992,10 +3108,10 @@ class GraphKeys(object):
     for more details.
   """
 
-  # Key to collect variables.Variable objects that must be saved and restored
+  # Key to collect Variable objects that must be saved and restored
   # by the model.
   VARIABLES = "variables"
-  # Key to collect variables.Variable objects that will be trained by the
+  # Key to collect Variable objects that will be trained by the
   # optimizers.
   TRAINABLE_VARIABLES = "trainable_variables"
   # Key to collect summaries.
@@ -3043,7 +3159,7 @@ def get_collection(key, scope=None):
 
 # pylint: disable=g-doc-return-or-yield
 @contextlib.contextmanager
-def op_scope(values, name, default_name):
+def op_scope(values, name, default_name=None):
   """Returns a context manager for use when defining a Python op.
 
   This context manager validates that the given `values` are from the
@@ -3068,10 +3184,17 @@ def op_scope(values, name, default_name):
     default_name: The default name to use if the `name` argument is `None`.
 
   Returns:
-    A context manager for use in defining a Python op.
+    A context manager for use in defining Python ops. Yields the name scope.
+
+  Raises:
+    ValueError: if neither `name` nor `default_name` is provided.
   """
   g = _get_graph_from_inputs(values)
   n = default_name if name is None else name
+  if n is None:
+    raise ValueError(
+        "At least one of name (%s) and default_name (%s) must be provided." % (
+            name, default_name))
   with g.as_default(), g.name_scope(n) as scope:
     yield scope
 # pylint: enable=g-doc-return-or-yield

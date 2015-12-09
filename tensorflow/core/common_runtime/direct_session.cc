@@ -35,7 +35,6 @@ limitations under the License.
 #include "tensorflow/core/lib/core/threadpool.h"
 #include "tensorflow/core/lib/gtl/array_slice.h"
 #include "tensorflow/core/lib/gtl/stl_util.h"
-#include "tensorflow/core/lib/random/random.h"
 #include "tensorflow/core/lib/strings/numbers.h"
 #include "tensorflow/core/lib/strings/str_util.h"
 #include "tensorflow/core/lib/strings/strcat.h"
@@ -49,8 +48,7 @@ namespace tensorflow {
 
 namespace {
 
-thread::ThreadPool* kernel_thread_pool_ = nullptr;
-static bool InitModule(const SessionOptions& options) {
+thread::ThreadPool* NewThreadPool(const SessionOptions& options) {
   int32 inter_op_parallelism_threads =
       options.config.inter_op_parallelism_threads();
   if (inter_op_parallelism_threads == 0) {
@@ -59,9 +57,13 @@ static bool InitModule(const SessionOptions& options) {
   }
   LOG(INFO) << "Direct session inter op parallelism threads: "
             << inter_op_parallelism_threads;
-  kernel_thread_pool_ = new thread::ThreadPool(options.env, "Compute",
-                                               inter_op_parallelism_threads);
-  return true;
+  return new thread::ThreadPool(options.env, "Compute",
+                                inter_op_parallelism_threads);
+}
+
+thread::ThreadPool* GlobalThreadPool(const SessionOptions& options) {
+  static thread::ThreadPool* const thread_pool = NewThreadPool(options);
+  return thread_pool;
 }
 
 // TODO(vrv): Figure out how to unify the many different functions
@@ -75,6 +77,8 @@ string GetRendezvousKey(const string& tensor_name,
                          device_info.name(), ";", tensor_name, ";",
                          frame_iter.frame_id, ":", frame_iter.iter_id);
 }
+
+}  // namespace
 
 // NOTE: On Android with a single device, there is never
 // a risk of an OpKernel blocking indefinitely:
@@ -91,7 +95,7 @@ string GetRendezvousKey(const string& tensor_name,
 // This may change down the road when we add support for multiple
 // devices that run concurrently, in which case we will need to
 // revisit this decision.
-void SchedClosure(std::function<void()> c) {
+void DirectSession::SchedClosure(std::function<void()> c) {
 // TODO(sanjay): Get rid of __ANDROID__ path
 #ifdef __ANDROID__
   // On Android, there is no implementation of ThreadPool that takes
@@ -101,20 +105,24 @@ void SchedClosure(std::function<void()> c) {
   // safe given the reasoning above.
   c();
 #else
-  kernel_thread_pool_->Schedule(c);
+  thread_pool_->Schedule(c);
 #endif  // __ANDROID__
 }
-
-}  // namespace
 
 DirectSession::DirectSession(const SessionOptions& options,
                              const DeviceMgr* device_mgr)
     : options_(options),
       device_mgr_(device_mgr),
       cancellation_manager_(new CancellationManager()) {
-  static bool init = InitModule(options);
-  CHECK(init);  // Avoids compiler warning that init is unused.
-  session_handle_ = strings::FpToString(random::New64());
+  if (options_.config.use_per_session_threads()) {
+    thread_pool_ = NewThreadPool(options_);
+  } else {
+    thread_pool_ = GlobalThreadPool(options);
+  }
+  // NOTE(mrry): We do not need to use a unique string for the session
+  // handle, because DirectSession owns its devices. This may change
+  // in future versions.
+  session_handle_ = "direct";
   int devices_added = 0;
   if (options.config.log_device_placement()) {
     const string mapping_str = device_mgr_->DeviceMappingString();
@@ -147,6 +155,10 @@ DirectSession::~DirectSession() {
     delete it.second;
   }
   delete cancellation_manager_;
+
+  if (options_.config.use_per_session_threads()) {
+    delete thread_pool_;
+  }
 }
 
 Status DirectSession::Create(const GraphDef& graph) {
@@ -164,6 +176,11 @@ Status DirectSession::Extend(const GraphDef& graph) {
 }
 
 Status DirectSession::ExtendLocked(const GraphDef& graph) {
+  if (graph_created_ && graph_def_.version() != graph.version()) {
+    return errors::InvalidArgument("Incompatible GraphDef versions in Extend: ",
+                                   graph_def_.version(), " != ",
+                                   graph.version());
+  }
   graph_created_ = true;  // In case this is first call
   graph_def_.MergeFrom(graph);
   return Status::OK();
@@ -223,7 +240,7 @@ Status DirectSession::Run(const std::vector<std::pair<string, Tensor>>& inputs,
   Executor::Args args;
   args.rendezvous = rendez;
   args.cancellation_manager = cancellation_manager_;
-  args.runner = SchedClosure;
+  args.runner = [this](Executor::Args::Closure c) { SchedClosure(c); };
 
   for (auto device_executor : executors_and_keys->device_executors) {
     Executor* exec = device_executor.second;

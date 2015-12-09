@@ -9,9 +9,9 @@ Note: Functions taking `Tensor` arguments can also take anything accepted by
 
 ## Activation Functions
 
-The activation ops provide different types of nonlinearities for use in
-neural networks.  These include smooth nonlinearities (`sigmoid`,
-`tanh`, and `softplus`), continuous but not everywhere differentiable
+The activation ops provide different types of nonlinearities for use in neural
+networks.  These include smooth nonlinearities (`sigmoid`, `tanh`, `elu`,
+`softplus`, and `softsign`), continuous but not everywhere differentiable
 functions (`relu`, `relu6`, and `relu_x`), and random regularization
 (`dropout`).
 
@@ -55,9 +55,46 @@ Computes Rectified Linear 6: `min(max(features, 0), 6)`.
 
 - - -
 
+### `tf.nn.elu(features, name=None)` {#elu}
+
+Computes exponential linear: `exp(features) - 1` if < 0, `features` otherwise.
+
+See [Fast and Accurate Deep Network Learning by Exponential Linear Units (ELUs)
+](http://arxiv.org/abs/1511.07289)
+
+##### Args:
+
+
+*  <b>`features`</b>: A `Tensor`. Must be one of the following types: `float32`, `float64`.
+*  <b>`name`</b>: A name for the operation (optional).
+
+##### Returns:
+
+  A `Tensor`. Has the same type as `features`.
+
+
+- - -
+
 ### `tf.nn.softplus(features, name=None)` {#softplus}
 
 Computes softplus: `log(exp(features) + 1)`.
+
+##### Args:
+
+
+*  <b>`features`</b>: A `Tensor`. Must be one of the following types: `float32`, `float64`, `int32`, `int64`, `uint8`, `int16`, `int8`.
+*  <b>`name`</b>: A name for the operation (optional).
+
+##### Returns:
+
+  A `Tensor`. Has the same type as `features`.
+
+
+- - -
+
+### `tf.nn.softsign(features, name=None)` {#softsign}
+
+Computes softsign: `features / (abs(features) + 1)`.
 
 ##### Args:
 
@@ -835,7 +872,7 @@ See [Noise-contrastive estimation: A new estimation principle for
 unnormalized statistical models]
 (http://www.jmlr.org/proceedings/papers/v9/gutmann10a/gutmann10a.pdf).
 Also see our [Candidate Sampling Algorithms Reference]
-(http://www.tensorflow.org/extras/candidate_sampling.pdf)
+(../../extras/candidate_sampling.pdf)
 
 Note: In the case where `num_true` > 1, we assign to each target class
 the target probability 1 / `num_true` so that the target probabilities
@@ -869,7 +906,7 @@ with an otherwise unused class.
       `True`, this is a "Sampled Logistic" loss instead of NCE, and we are
       learning to generate log-odds instead of log probabilities.  See
       our [Candidate Sampling Algorithms Reference]
-      (http://www.tensorflow.org/extras/candidate_sampling.pdf).
+      (../../extras/candidate_sampling.pdf).
       Default is False.
 *  <b>`name`</b>: A name for the operation (optional).
 
@@ -894,7 +931,7 @@ At inference time, you can compute full softmax probabilities with the
 expression `tf.nn.softmax(tf.matmul(inputs, weights) + biases)`.
 
 See our [Candidate Sampling Algorithms Reference]
-(http://www.tensorflow.org/extras/candidate_sampling.pdf)
+(../../extras/candidate_sampling.pdf)
 
 Also see Section 3 of http://arxiv.org/abs/1412.2007 for the math.
 
@@ -1101,7 +1138,7 @@ compute them approximately.
 
 - - -
 
-### `tf.nn.fixed_unigram_candidate_sampler(true_classes, num_true, num_sampled, unique, range_max, vocab_file='', distortion=0.0, num_reserved_ids=0, num_shards=1, shard=0, unigrams=[], seed=None, name=None)` {#fixed_unigram_candidate_sampler}
+### `tf.nn.fixed_unigram_candidate_sampler(true_classes, num_true, num_sampled, unique, range_max, vocab_file='', distortion=1.0, num_reserved_ids=0, num_shards=1, shard=0, unigrams=[], seed=None, name=None)` {#fixed_unigram_candidate_sampler}
 
 Samples a set of classes using the provided (fixed) base distribution.
 

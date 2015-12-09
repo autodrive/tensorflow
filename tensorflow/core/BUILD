@@ -2,7 +2,9 @@
 # TensorFlow is a computational framework, primarily for use in machine
 # learning applications.
 
-package(default_visibility = ["//tensorflow:internal"])
+package(
+    default_visibility = ["//tensorflow:internal"],
+)
 
 package_group(name = "friends")
 
@@ -101,7 +103,10 @@ tf_cuda_library(
             "**/*main.cc",
         ],
     ),
-    hdrs = glob(["public/**/*.h"]),
+    hdrs = glob([
+        "public/**/*.h",
+        "util/device_name_utils.h",
+    ]),
     copts = tf_copts(),
     visibility = ["//visibility:public"],
     deps = [
@@ -182,10 +187,7 @@ cc_library(
         "graph/testlib.h",
     ],
     copts = tf_copts(),
-    visibility = [
-        ":friends",
-        "//tensorflow:internal",
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         ":core_cpu",
         ":tensorflow",
@@ -208,11 +210,9 @@ tf_cuda_library(
 )
 
 tf_cuda_library(
-    name = "kernels",
+    name = "ops",
     srcs = glob(
         [
-            "kernels/**/*.h",
-            "kernels/**/*.cc",
             "ops/**/*.h",
             "ops/**/*.cc",
             "user_ops/**/*.h",
@@ -221,14 +221,38 @@ tf_cuda_library(
         exclude = [
             "**/*test*",
             "**/*main.cc",
-            "kernels/**/*.cu.cc",
             "user_ops/**/*.cu.cc",
+        ],
+    ),
+    copts = tf_copts(),
+    linkstatic = 1,
+    visibility = ["//visibility:public"],
+    deps = [
+        ":core",
+        ":lib",
+        ":protos_cc",
+        "//tensorflow/models/embedding:word2vec_ops",
+        "//third_party/eigen3",
+    ],
+    alwayslink = 1,
+)
+
+tf_cuda_library(
+    name = "kernels",
+    srcs = glob(
+        [
+            "kernels/**/*.h",
+            "kernels/**/*.cc",
+        ],
+        exclude = [
+            "**/*test*",
+            "**/*main.cc",
+            "kernels/**/*.cu.cc",
         ],
     ),
     copts = tf_copts(),
     cuda_deps = [
         ":gpu_kernels",
-        ":cuda",
     ],
     linkstatic = 0,
     visibility = ["//visibility:public"],
@@ -236,10 +260,10 @@ tf_cuda_library(
         "@gemmlowp//:eight_bit_int_gemm",
         ":core",
         ":lib",
+        ":ops",
         ":protos_cc",
         ":stream_executor",
         "//tensorflow/models/embedding:word2vec_kernels",
-        "//tensorflow/models/embedding:word2vec_ops",
         "//third_party/eigen3",
     ],
     alwayslink = 1,
@@ -257,6 +281,7 @@ tf_gpu_kernel_library(
     ),
     visibility = ["//visibility:public"],
     deps = [
+        ":cuda",
         "//third_party/eigen3",
     ],
 )
@@ -293,14 +318,13 @@ cc_library(
     ],
 )
 
-# TODO(opensource): Make it work externally
 tf_proto_library(
     name = "protos_all",
     srcs = glob(["**/*.proto"]),
     cc_api_version = 2,
     go_api_version = 2,
     java_api_version = 2,
-    py_api_version = 2,  # TODO(irving): Handle 3
+    py_api_version = 2,
     visibility = ["//visibility:public"],
 )
 
@@ -346,6 +370,12 @@ cc_library(
     alwayslink = 1,
 )
 
+# This is to workaround strict header checks
+cc_library(
+    name = "strict_headers",
+    hdrs = glob(["**/*.h"]),
+)
+
 # Low level library tests
 tf_cc_tests(
     tests = glob(
@@ -357,6 +387,7 @@ tf_cc_tests(
     ),
     deps = [
         ":lib",
+        ":strict_headers",
         ":test_main",
     ],
 )
@@ -405,6 +436,8 @@ tf_cc_tests(
         ":direct_session",
         ":kernels",
         ":lib",
+        ":ops",
+        ":strict_headers",
         ":test_main",
         ":testlib",
         "//tensorflow/cc:cc_ops",
@@ -425,6 +458,7 @@ tf_cc_tests(
     deps = [
         ":direct_session",
         ":kernels",
+        ":strict_headers",
         ":test_main",
         ":testlib",
         "//tensorflow/cc:cc_ops",
@@ -507,7 +541,6 @@ filegroup(
             "kernels/maxpooling_op.h",
             "kernels/pooling_ops_common.h",
             "kernels/pooling_ops_common.cc",
-            "kernels/reference_gemm.h",
         ],
         exclude = [
             "**/*test.cc",
@@ -571,7 +604,6 @@ filegroup(
         "//tensorflow/core:kernels/no_op.cc",
         "//tensorflow/core:kernels/no_op.h",
         "//tensorflow/core:kernels/pack_op.cc",
-        "//tensorflow/core:kernels/reference_gemm.h",
         "//tensorflow/core:kernels/reshape_op.cc",
         "//tensorflow/core:kernels/reshape_op.h",
         "//tensorflow/core:kernels/reverse_sequence_op.cc",
@@ -600,6 +632,7 @@ filegroup(
     srcs = [
         "//tensorflow/core:kernels/avgpooling_op.cc",
         "//tensorflow/core:kernels/avgpooling_op.h",
+        "//tensorflow/core:kernels/bcast_ops.cc",
         "//tensorflow/core:kernels/control_flow_ops.cc",
         "//tensorflow/core:kernels/control_flow_ops.h",
         "//tensorflow/core:kernels/conv_2d.h",
@@ -610,25 +643,33 @@ filegroup(
         "//tensorflow/core:kernels/cwise_op_less.cc",
         "//tensorflow/core:kernels/cwise_op_log.cc",
         "//tensorflow/core:kernels/cwise_op_mul.cc",
+        "//tensorflow/core:kernels/cwise_op_neg.cc",
         "//tensorflow/core:kernels/cwise_op_sigmoid.cc",
         "//tensorflow/core:kernels/cwise_op_sqrt.cc",
         "//tensorflow/core:kernels/cwise_op_square.cc",
         "//tensorflow/core:kernels/cwise_op_sub.cc",
         "//tensorflow/core:kernels/cwise_op_tanh.cc",
         "//tensorflow/core:kernels/dynamic_partition_op.cc",
+        "//tensorflow/core:kernels/dynamic_stitch_op.cc",
         "//tensorflow/core:kernels/lrn_op.cc",
         "//tensorflow/core:kernels/maxpooling_op.cc",
         "//tensorflow/core:kernels/maxpooling_op.h",
         "//tensorflow/core:kernels/reduction_ops.h",
         "//tensorflow/core:kernels/reduction_ops_common.h",
         "//tensorflow/core:kernels/reduction_ops_max.cc",
+        "//tensorflow/core:kernels/reduction_ops_mean.cc",
         "//tensorflow/core:kernels/reduction_ops_min.cc",
+        "//tensorflow/core:kernels/reduction_ops_prod.cc",
         "//tensorflow/core:kernels/reduction_ops_sum.cc",
         "//tensorflow/core:kernels/relu_op.cc",
         "//tensorflow/core:kernels/relu_op.h",
         "//tensorflow/core:kernels/softplus_op.cc",
         "//tensorflow/core:kernels/softplus_op.h",
+        "//tensorflow/core:kernels/softsign_op.cc",
+        "//tensorflow/core:kernels/softsign_op.h",
         "//tensorflow/core:kernels/stack_ops.cc",
+        "//tensorflow/core:kernels/tile_ops.cc",
+        "//tensorflow/core:kernels/tile_ops.h",
         "//tensorflow/core:kernels/transpose_op.cc",
         "//tensorflow/core:kernels/transpose_op.h",
         "//tensorflow/core:kernels/transpose_op_functor.h",

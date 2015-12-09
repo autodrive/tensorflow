@@ -7,6 +7,20 @@ exports_files(["LICENSE"])
 
 load("/tensorflow/tensorflow", "tf_gen_op_wrapper_py")
 
+py_library(
+    name = "package",
+    srcs = [
+        "__init__.py",
+    ],
+    srcs_version = "PY2AND3",
+    visibility = ["//tensorflow:__subpackages__"],
+    deps = [
+        ":gen_word2vec",
+        ":word2vec",
+        ":word2vec_optimized",
+    ],
+)
+
 py_binary(
     name = "word2vec",
     srcs = [
@@ -38,6 +52,9 @@ py_test(
     size = "small",
     srcs = ["word2vec_test.py"],
     srcs_version = "PY2AND3",
+    tags = [
+        "notsan",  # b/25864127
+    ],
     deps = [
         ":word2vec",
         "//tensorflow:tensorflow_py",

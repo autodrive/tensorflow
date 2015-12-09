@@ -19,7 +19,7 @@ represent words as vectors.
 
 We walk through the code later during the tutorial, but if you'd prefer to dive
 straight in, feel free to look at the minimalistic implementation in
-[tensorflow/g3doc/tutorials/word2vec/word2vec_basic.py](https://tensorflow.googlesource.com/tensorflow/+/master/tensorflow/g3doc/tutorials/word2vec/word2vec_basic.py)
+[tensorflow/examples/tutorials/word2vec/word2vec_basic.py](https://tensorflow.googlesource.com/tensorflow/+/master/tensorflow/examples/tutorials/word2vec/word2vec_basic.py)
 This basic example contains the code needed to download some data, train on it a
 bit and visualize the result. Once you get comfortable with reading and running
 the basic version, you can graduate to
@@ -51,7 +51,7 @@ means that we may need more data in order to successfully train statistical
 models.  Using vector representations can overcome some of these obstacles.
 
 <div style="width:100%; margin:auto; margin-bottom:10px; margin-top:20px;">
-<img style="width:100%" src="img/audio-image-text.png" alt>
+<img style="width:100%" src="../../images/audio-image-text.png" alt>
 </div>
 
 [Vector space models](https://en.wikipedia.org/wiki/Vector_space_model) (VSMs)
@@ -124,7 +124,7 @@ probability using the score for all other \\(V\\) words \\(w'\\) in the current
 context \\(h\\), *at every training step*.
 
 <div style="width:60%; margin:auto; margin-bottom:10px; margin-top:20px;">
-<img style="width:100%" src="img/softmax-nplm.png" alt>
+<img style="width:100%" src="../../images/softmax-nplm.png" alt>
 </div>
 
 On the other hand, for feature learning in word2vec we do not need a full
@@ -135,7 +135,7 @@ same context. We illustrate this below for a CBOW model. For skip-gram the
 direction is simply inverted.
 
 <div style="width:60%; margin:auto; margin-bottom:10px; margin-top:20px;">
-<img style="width:100%" src="img/nce-nplm.png" alt>
+<img style="width:100%" src="../../images/nce-nplm.png" alt>
 </div>
 
 Mathematically, the objective (for each example) is to maximize
@@ -147,7 +147,7 @@ $$J_\text{NEG} = \log Q_\theta(D=1 |w_t, h) +
 where \\(Q_\theta(D=1 | w, h)\\) is the binary logistic regression probability
 under the model of seeing the word \\(w\\) in the context \\(h\\) in the dataset
 \\(D\\), calculated in terms of the learned embedding vectors \\(\theta\\). In
-practice we approximate the expectation by drawing \\(k\\) constrastive words
+practice we approximate the expectation by drawing \\(k\\) contrastive words
 from the noise distribution (i.e. we compute a
 [Monte Carlo average](https://en.wikipedia.org/wiki/Monte_Carlo_integration)).
 
@@ -232,7 +232,7 @@ below (see also for example
 [Mikolov et al., 2013](http://www.aclweb.org/anthology/N13-1090)).
 
 <div style="width:100%; margin:auto; margin-bottom:10px; margin-top:20px;">
-<img style="width:100%" src="img/linear-relationships.png" alt>
+<img style="width:100%" src="../../images/linear-relationships.png" alt>
 </div>
 
 This explains why these vectors are also useful as features for many canonical
@@ -269,7 +269,7 @@ nce_biases = tf.Variable(tf.zeros([vocabulary_size]))
 Now that we have the parameters in place, we can define our skip-gram model
 graph. For simplicity, let's suppose we've already integerized our text corpus
 with a vocabulary so that each word is represented as an integer (see
-[tensorflow/g3doc/tutorials/word2vec/word2vec_basic.py](https://tensorflow.googlesource.com/tensorflow/+/master/tensorflow/g3doc/tutorials/word2vec/word2vec_basic.py)
+[tensorflow/examples/tutorials/word2vec/word2vec_basic.py](https://tensorflow.googlesource.com/tensorflow/+/master/tensorflow/examples/tutorials/word2vec/word2vec_basic.py)
 for the details). The skip-gram model takes two inputs. One is a batch full of
 integers representing the source context words, the other is for the target
 words. Let's create placeholder nodes for these inputs, so that we can feed in
@@ -321,7 +321,7 @@ for inputs, labels in generate_batch(...):
 ```
 
 See the full example code in
-[tensorflow/g3doc/tutorials/word2vec/word2vec_basic.py](./word2vec_basic.py).
+[tensorflow/examples/tutorials/word2vec/word2vec_basic.py](https://tensorflow.googlesource.com/tensorflow/+/master/tensorflow/examples/tutorials/word2vec/word2vec_basic.py).
 
 ## Visualizing the Learned Embeddings
 
@@ -329,7 +329,7 @@ After training has finished we can visualize the learned embeddings using
 t-SNE.
 
 <div style="width:100%; margin:auto; margin-bottom:10px; margin-top:20px;">
-<img style="width:100%" src="img/tsne.png" alt>
+<img style="width:100%" src="../../images/tsne.png" alt>
 </div>
 
 Et voila! As expected, words that are similar end up clustering nearby each

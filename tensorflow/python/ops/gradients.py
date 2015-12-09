@@ -50,7 +50,7 @@ from tensorflow.python.platform import logging
 _LARGE_SPARSE_NUM_ELEMENTS = 100000000
 
 
-def _IndexedSlicesToTensor(value, dtype=None, name=None):
+def _IndexedSlicesToTensor(value, dtype=None, name=None, as_ref=False):
   """Converts an IndexedSlices object `value` to a Tensor.
 
   NOTE(mrry): This function is potentially expensive.
@@ -59,6 +59,7 @@ def _IndexedSlicesToTensor(value, dtype=None, name=None):
     value: An ops.IndexedSlices object.
     dtype: The dtype of the Tensor to be returned.
     name: Optional name to use for the returned Tensor.
+    as_ref: True if a ref is requested.
 
   Returns:
     A dense Tensor representing the values in the given IndexedSlices.
@@ -66,6 +67,7 @@ def _IndexedSlicesToTensor(value, dtype=None, name=None):
   Raises:
     ValueError: If the IndexedSlices does not have the same dtype.
   """
+  _ = as_ref
   if dtype and not dtype.is_compatible_with(value.dtype):
     raise ValueError(
         "Tensor conversion requested dtype %s for IndexedSlices with dtype %s" %
@@ -396,7 +398,10 @@ def gradients(ys,
     # Add the ops in 'to_ops' into the queue.
     to_ops_set = set()
     for op in to_ops:
-      if op._id not in to_ops_set:
+      # 'ready' handles the case where one output gradient relies on
+      # another output's gradient.
+      ready = (pending_count[op._id] == 0)
+      if ready and op._id not in to_ops_set:  # pylint: disable=protected-access
         to_ops_set.add(op._id)
         queue.append(op)
     # The set of 'from_ops'.
@@ -439,7 +444,7 @@ def gradients(ys,
                 op_wrapper = control_flow_ops.MakeWrapper(op)
               in_grads = _AsList(grad_fn(op_wrapper, *out_grads))
               _VerifyGeneratedGradients(in_grads, op)
-              if gate_gradients and len(in_grads) > 1:
+              if gate_gradients and len(filter(None, in_grads)) > 1:
                 in_grads = control_flow_ops.tuple(in_grads)
           logging.vlog(1, "Gradient for '" + op.name + "'")
           logging.vlog(1, "  in  --> %s",

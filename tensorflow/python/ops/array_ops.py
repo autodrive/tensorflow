@@ -335,7 +335,10 @@ def _ConcatShape(op):
         value.get_shape().assert_has_rank(rank)
       else:
         rank = value.get_shape().ndims
-    return [tensor_shape.unknown_shape(ndims=max(rank, 1))]
+    # TODO(irving): Remove once !kAllowLegacyScalars.
+    if rank is not None:
+      rank = max(rank, 1)
+    return [tensor_shape.unknown_shape(ndims=rank)]
 
   else:
     # Merge all the non-concat dims, and sum the concat dim to make an
@@ -841,6 +844,12 @@ def _SqueezeShape(op):
 def _ReshapeShape(op):
   """Shape function for Reshape op."""
   input_shape = op.inputs[0].get_shape()
+  if input_shape.ndims is not None:
+    num_elements = tensor_shape.Dimension(1)
+    for dim in input_shape.dims:
+      num_elements *= dim
+  else:
+    num_elements = tensor_shape.Dimension(None)
   new_shape_shape = op.inputs[1].get_shape().with_rank_at_most(1)
   new_shape = tensor_util.ConstantValue(op.inputs[1])
   if new_shape is None:
@@ -850,13 +859,15 @@ def _ReshapeShape(op):
   new_shape = np.reshape(new_shape, -1).tolist()
   if -1 not in new_shape:
     # The new shape is fully defined.
+    if (num_elements.value is not None
+        and num_elements.value != np.prod(new_shape)):
+      raise ValueError(
+          "Cannot reshape a tensor with %d elements to shape %s (%d elements)"
+          % (num_elements.value, new_shape, np.prod(new_shape)))
     return [tensor_shape.TensorShape(new_shape)]
-  elif input_shape.is_fully_defined():
-    # We know the input shape, so we can calculate the missing
+  elif num_elements.value is not None:
+    # We know the number of elements, so we can calculate the missing
     # dimension in the new_shape.
-    num_elements = 1
-    for dim in input_shape.dims:
-      num_elements *= dim.value
     known_elements = 1
     unknown_index = None
     for i, dim in enumerate(new_shape):
@@ -990,17 +1001,22 @@ def _ReverseSequenceShape(op):
     A single-element list containing the shape of the output.
 
   Raises:
-    ValueError: If the input shapes are incompatible.
+    ValueError: If the input shapes are incompatible or seq_dim == batch_dim.
   """
   input_shape = op.inputs[0].get_shape()
   seq_lens_shape = op.inputs[1].get_shape().with_rank(1)
-  batch_size = input_shape[0].merge_with(seq_lens_shape[0])
-  input_shape = tensor_shape.TensorShape([batch_size]).concatenate(
-      input_shape[1:])
   seq_dim = op.get_attr("seq_dim")
+  batch_dim = op.get_attr("batch_dim")
+  if batch_dim >= input_shape.ndims:
+    raise ValueError("batch_dim must be < input.dims() (%d vs %d)" %
+                     (batch_dim, input_shape.ndims))
   if seq_dim >= input_shape.ndims:
     raise ValueError("seq_dim must be < input.dims() (%d vs %d)" %
                      (seq_dim, input_shape.ndims))
+  batch_size = input_shape[batch_dim].merge_with(seq_lens_shape[0])
+  input_shape = tensor_shape.TensorShape([
+      value if ix != batch_dim else batch_size
+      for ix, value in enumerate(input_shape)])
   return [input_shape]
 
 

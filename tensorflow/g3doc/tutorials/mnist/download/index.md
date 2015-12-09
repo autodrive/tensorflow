@@ -1,6 +1,6 @@
 # MNIST Data Download
 
-Code: [tensorflow/g3doc/tutorials/mnist/](https://tensorflow.googlesource.com/tensorflow/+/master/tensorflow/g3doc/tutorials/mnist/)
+Code: [tensorflow/examples/tutorials/mnist/](https://tensorflow.googlesource.com/tensorflow/+/master/tensorflow/examples/tutorials/mnist/)
 
 The goal of this tutorial is to show how to download the dataset files required
 for handwritten digit classification using the (classic) MNIST data set.
@@ -11,7 +11,7 @@ This tutorial references the following files:
 
 File | Purpose
 --- | ---
-[`input_data.py`](https://tensorflow.googlesource.com/tensorflow/+/master/tensorflow/g3doc/tutorials/mnist/input_data.py) | The code to download the MNIST dataset for training and evaluation.
+[`input_data.py`](https://tensorflow.googlesource.com/tensorflow/+/master/tensorflow/examples/tutorials/mnist/input_data.py) | The code to download the MNIST dataset for training and evaluation.
 
 ## Prepare the Data
 
@@ -19,7 +19,7 @@ MNIST is a classic problem in machine learning. The problem is to look at
 greyscale 28x28 pixel images of handwritten digits and determine which digit
 the image represents, for all the digits from zero to nine.
 
-![MNIST Digits](../tf/mnist_digits.png "MNIST Digits")
+![MNIST Digits](../../../images/mnist_digits.png "MNIST Digits")
 
 For more information, refer to [Yann LeCun's MNIST page](http://yann.lecun.com/exdb/mnist/)
 or [Chris Olah's visualizations of MNIST](http://colah.github.io/posts/2014-10-Visualizing-MNIST/).

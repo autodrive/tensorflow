@@ -451,6 +451,8 @@ class StreamInterface {
 
 static cudaDeviceProp* m_deviceProperties;
 static bool m_devicePropInitialized = false;
+
+#ifndef __CUDA_ARCH__
 static tensorflow::mutex m_devicePropInitMutex(tensorflow::LINKER_INITIALIZED);
 
 static void initializeDeviceProp() {
@@ -469,6 +471,11 @@ static void initializeDeviceProp() {
     }
   }
 }
+#else
+static void initializeDeviceProp() {
+  assert(false && "This function should never be called from within a CUDA kernel");
+}
+#endif  // __CUDA_ARCH__
 
 static const cudaStream_t default_stream = cudaStreamDefault;
 
@@ -757,11 +764,17 @@ static inline void setCudaSharedMemConfig(cudaSharedMemConfig cache_config) {
 }
 
 struct GpuDevice {
-  GpuDevice()
-      : stream_(perftools::gputools::MachineManager::singleton()->stream_for_device(0)),
-        allocator_(nullptr),
-        stream_exec_(stream_->parent()),
-        device_descr_(&(stream_exec_->GetDeviceDescription())) {}
+  // Default constructor: Get [cached] device 0 and its default stream.
+  GpuDevice() : allocator_(nullptr) {
+    perftools::gputools::Platform* platform =
+        perftools::gputools::MultiPlatformManager::PlatformWithName("cuda")
+            .ValueOrDie();
+    stream_exec_ = platform->ExecutorForDevice(0).ValueOrDie();
+    // TODO(rspringer): If we ever pull from an executor aside from 0, this will
+    // need to be preceded by a call to SetDevice(N);
+    stream_ = platforms::gpus::gcudacc::GetDefaultStream();
+    device_descr_ = &(stream_exec_->GetDeviceDescription());
+  }
 
   GpuDevice(perftools::gputools::Stream* stream,
             const Allocator* alloc = nullptr)

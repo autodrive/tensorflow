@@ -34,6 +34,7 @@ from tensorflow.python.framework import dtypes
 from tensorflow.python.framework import ops
 from tensorflow.python.framework import tensor_util
 from tensorflow.python.framework import test_util
+from tensorflow.python.framework import versions
 from tensorflow.python.ops import array_ops
 from tensorflow.python.ops import constant_op
 from tensorflow.python.ops import control_flow_ops
@@ -86,6 +87,14 @@ class SessionTest(test_util.TensorFlowTestCase):
     # devices returned by ListDevices.
     with session.Session(
         config=config_pb2.ConfigProto(device_count={'CPU': 2})):
+      inp = constant_op.constant(10.0, name='W1')
+      self.assertAllEqual(inp.eval(), 10.0)
+
+  def testPerSessionThreads(self):
+    # TODO(keveman): Implement ListDevices and test for the number of
+    # devices returned by ListDevices.
+    with session.Session(
+        config=config_pb2.ConfigProto(use_per_session_threads=True)):
       inp = constant_op.constant(10.0, name='W1')
       self.assertAllEqual(inp.eval(), 10.0)
 
@@ -425,7 +434,8 @@ class SessionTest(test_util.TensorFlowTestCase):
 
   def testGraphDef(self):
     with session.Session() as sess:
-      self.assertProtoEquals('', sess.graph_def)
+      self.assertProtoEquals('version: %d' % versions.GRAPH_DEF_VERSION,
+                             sess.graph_def)
       c = constant_op.constant(5.0, name='c')
       self.assertEquals(len(sess.graph_def.node), 1)
       d = constant_op.constant(6.0, name='d')

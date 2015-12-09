@@ -36,10 +36,15 @@ def load_resource(path):
   Raises:
     IOError: If the path is not found, or the resource can't be opened.
   """
-  path = os.path.join('tensorflow', path)
+  tensorflow_root = (
+      os.path.join(
+          os.path.dirname(__file__), os.pardir, os.pardir,
+          os.pardir))
+  path = os.path.join(tensorflow_root, path)
   path = os.path.abspath(path)
   try:
     with open(path, 'rb') as f:
       return f.read()
   except IOError as e:
     logging.warning('IOError %s on path %s', e, path)
+    raise e

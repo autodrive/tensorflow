@@ -69,9 +69,9 @@ class AdamOptimizer(optimizer.Optimizer):
       beta1: A float value or a constant float tensor.
         The exponential decay rate for the 1st moment estimates.
       beta2: A float value or a constant float tensor.
-        The exponential decay rate for the 2st moment estimates.
+        The exponential decay rate for the 2nd moment estimates.
       epsilon: A small constant for numerical stability.
-      use_locking: If True use locks for update operation.s
+      use_locking: If True use locks for update operations.
       name: Optional name for the operations created when applying gradients.
         Defaults to "Adam".
     """
@@ -103,8 +103,12 @@ class AdamOptimizer(optimizer.Optimizer):
     # variable.
     if self._beta1_power is None:
       with ops.device(var_list[0].device):
-        self._beta1_power = variables.Variable(self._beta1, name="beta1_power")
-        self._beta2_power = variables.Variable(self._beta2, name="beta2_power")
+        self._beta1_power = variables.Variable(self._beta1,
+                                               name="beta1_power",
+                                               trainable=False)
+        self._beta2_power = variables.Variable(self._beta2,
+                                               name="beta2_power",
+                                               trainable=False)
     # Create slots for the first and second moments.
     for v in var_list:
       self._zeros_slot(v, "m", self._name)
@@ -143,8 +147,8 @@ class AdamOptimizer(optimizer.Optimizer):
                                use_locking=self._use_locking)
     v_sqrt = math_ops.sqrt(v_t)
     var_update = state_ops.assign_sub(var,
-                                     lr * m_t / (v_sqrt + self._epsilon_t),
-                                     use_locking=self._use_locking)
+                                      lr * m_t / (v_sqrt + self._epsilon_t),
+                                      use_locking=self._use_locking)
     return control_flow_ops.group(*[var_update, m_t, v_t])
 
   def _finish(self, update_ops, name_scope):

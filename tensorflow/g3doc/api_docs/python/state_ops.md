@@ -296,8 +296,8 @@ This is not a graph construction method, it does not add ops to the graph.
 
 This convenience method requires a session where the graph containing this
 variable has been launched. If no session is passed, the default session is
-used.  See the [Session class](../../api_docs/python/client.md#Session) for more information on
-launching a graph and on sessions.
+used.  See the [Session class](../../api_docs/python/client.md#Session) for
+more information on launching a graph and on sessions.
 
 ```python
 v = tf.Variable([1, 2])
@@ -377,6 +377,51 @@ The `Graph` of this variable.
 #### `tf.Variable.op` {#Variable.op}
 
 The `Operation` of this variable.
+
+
+
+#### Other Methods
+- - -
+
+#### `tf.Variable.ref()` {#Variable.ref}
+
+Returns a reference to this variable.
+
+You usually do not need to call this method as all ops that need a reference
+to the variable call it automatically.
+
+Returns is a `Tensor` which holds a reference to the variable.  You can
+assign a new value to the variable by passing the tensor to an assign op.
+See [`value()`](#Variable.value) if you want to get the value of the
+variable.
+
+##### Returns:
+
+  A `Tensor` that is a reference to the variable.
+
+
+- - -
+
+#### `tf.Variable.value()` {#Variable.value}
+
+Returns the last snapshot of this variable.
+
+You usually do not need to call this method as all ops that need the value
+of the variable call it automatically through a `convert_to_tensor()` call.
+
+Returns a `Tensor` which holds the value of the variable.  You can not
+assign a new value to this tensor as it is not a reference to the variable.
+See [`ref()`](#Variable.ref) if you want to get a reference to the
+variable.
+
+To avoid copies, if the consumer of the returned value is on the same device
+as the variable, this actually returns the live value of the variable, not
+a copy.  Updates to the variable are seen by the consumer.  If the consumer
+is on a different device it will get a copy of the variable.
+
+##### Returns:
+
+  A `Tensor` containing the value of the variable.
 
 
 
@@ -845,9 +890,9 @@ the constructor is used. If that one is `None` too, a
 *  <b>`dtype`</b>: type of the new or existing variable (defaults to `DT_FLOAT`).
 *  <b>`initializer`</b>: initializer for the variable if one is created.
 *  <b>`trainable`</b>: If `True` also add the variable to the graph collection
-    `GraphKeys.TRAINABLE_VARIABLES` (see variables.Variable).
+    `GraphKeys.TRAINABLE_VARIABLES` (see tf.Variable).
 *  <b>`collections`</b>: List of graph collections keys to add the Variable to.
-    Defaults to `[GraphKeys.VARIABLES]` (see variables.Variable).
+    Defaults to `[GraphKeys.VARIABLES]` (see tf.Variable).
 
 ##### Returns:
 
@@ -866,6 +911,58 @@ the constructor is used. If that one is `None` too, a
 ### `tf.get_variable_scope()` {#get_variable_scope}
 
 Returns the current variable scope.
+
+
+- - -
+
+### `tf.variable_op_scope(values, name, default_name, initializer=None)` {#variable_op_scope}
+
+Returns a context manager for defining an op that creates variables.
+
+This context manager validates that the given `values` are from the
+same graph, ensures that that graph is the default graph, and pushes a
+name scope and a variable scope.
+
+If `name` is not None, it is used as is in the variable scope. If `name`
+is None, then `default_name` is used.  In that case, if the same name has been
+previously used in the same scope, it will made unique be appending `_N` to
+it.
+
+This is intended to be used when defining generic ops and so reuse is always
+inherited.
+
+For example, to define a new Python op called `my_op_with_vars`:
+
+```python
+def my_op_with_vars(a, b, name=None):
+  with tf.variable_op_scope([a, b], name, "MyOp") as scope:
+    a = tf.convert_to_tensor(a, name="a")
+    b = tf.convert_to_tensor(b, name="b")
+    c = tf.get_variable('c')
+    # Define some computation that uses `a`, `b`, and `c`.
+    return foo_op(..., name=scope)
+```
+
+##### Args:
+
+
+*  <b>`values`</b>: The list of `Tensor` arguments that are passed to the op function.
+*  <b>`name`</b>: The name argument that is passed to the op function, this name is not
+    uniquified in the variable scope.
+*  <b>`default_name`</b>: The default name to use if the `name` argument is `None`, this
+    name will be uniquified.
+*  <b>`initializer`</b>: A default initializer to pass to variable scope.
+
+##### Returns:
+
+  A context manager for use in defining a Python op.
+
+##### Raises:
+
+
+*  <b>`ValueError`</b>: when trying to reuse within a create scope, or create within
+    a reuse scope, or if reuse is not `None` or `True`.
+*  <b>`TypeError`</b>: when the types of some arguments are not appropriate.
 
 
 - - -
@@ -901,7 +998,7 @@ assert v1 == v
 Sharing a variable by capturing a scope and setting reuse:
 
 ```python
-with tf.variable_scope("foo") as scope.
+with tf.variable_scope("foo") as scope:
     v = tf.get_variable("v", [1])
     scope.reuse_variables()
     v1 = tf.get_variable("v", [1])
@@ -912,7 +1009,7 @@ To prevent accidental sharing of variables, we raise an exception when
 getting an existing variable in a non-reusing scope.
 
 ```python
-with tf.variable_scope("foo") as scope.
+with tf.variable_scope("foo"):
     v = tf.get_variable("v", [1])
     v1 = tf.get_variable("v", [1])
     #  Raises ValueError("... v already exists ...").
@@ -938,7 +1035,7 @@ then all its sub-scopes become reusing as well.
     well as all sub-scopes; if `None`, we just inherit the parent scope reuse.
 *  <b>`initializer`</b>: default initializer for variables within this scope.
 
-##### Yields:
+##### Returns:
 
   A scope that can be to captured and reused.
 
@@ -1122,7 +1219,7 @@ override earlier entries.
 Requires `updates.shape = indices.shape + ref.shape[1:]`.
 
 <div style="width:70%; margin:auto; margin-bottom:10px; margin-top:20px;">
-<img style="width:100%" src="../images/ScatterUpdate.png" alt>
+<img style="width:100%" src="../../images/ScatterUpdate.png" alt>
 </div>
 
 ##### Args:
@@ -1170,7 +1267,7 @@ the same location, their contributions add.
 Requires `updates.shape = indices.shape + ref.shape[1:]`.
 
 <div style="width:70%; margin:auto; margin-bottom:10px; margin-top:20px;">
-<img style="width:100%" src="../images/ScatterAdd.png" alt>
+<img style="width:100%" src="../../images/ScatterAdd.png" alt>
 </div>
 
 ##### Args:
@@ -1217,7 +1314,7 @@ the same location, their (negated) contributions add.
 Requires `updates.shape = indices.shape + ref.shape[1:]`.
 
 <div style="width:70%; margin:auto; margin-bottom:10px; margin-top:20px;">
-<img style="width:100%" src="../images/ScatterSub.png" alt>
+<img style="width:100%" src="../../images/ScatterSub.png" alt>
 </div>
 
 ##### Args:
@@ -1368,6 +1465,15 @@ The name of the device on which `values` will be produced, or `None`.
 #### `tf.IndexedSlices.op` {#IndexedSlices.op}
 
 The `Operation` that produces `values` as an output.
+
+
+
+#### Other Methods
+- - -
+
+#### `tf.IndexedSlices.graph` {#IndexedSlices.graph}
+
+The `Graph` that contains the values, indices, and shape tensors.
 
 
 

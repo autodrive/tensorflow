@@ -23,8 +23,6 @@ import tensorflow.python.platform
 import numpy as np
 import tensorflow as tf
 
-from tensorflow.python.kernel_tests import gradient_checker as gc
-
 
 class BatchMatmulOpTest(tf.test.TestCase):
 
@@ -153,14 +151,14 @@ class BatchMatmulOpTest(tf.test.TestCase):
                   self._randComplex([10, 30, 75]), True, True)
 
   def testEmpty(self):
-    self._compare(np.empty([0, 3, 2]).astype(np.float32),
-                  np.empty([0, 2, 4]).astype(np.float32), False, False)
-    self._compare(np.empty([3, 2, 0]).astype(np.float32),
-                  np.empty([3, 0, 5]).astype(np.float32), False, False)
-    self._compare(np.empty([3, 0, 2]).astype(np.float32),
-                  np.empty([3, 2, 5]).astype(np.float32), False, False)
-    self._compare(np.empty([3, 3, 2]).astype(np.float32),
-                  np.empty([3, 2, 0]).astype(np.float32), False, False)
+    self._compare(np.zeros([0, 3, 2]).astype(np.float32),
+                  np.zeros([0, 2, 4]).astype(np.float32), False, False)
+    self._compare(np.zeros([3, 2, 0]).astype(np.float32),
+                  np.zeros([3, 0, 5]).astype(np.float32), False, False)
+    self._compare(np.zeros([3, 0, 2]).astype(np.float32),
+                  np.zeros([3, 2, 5]).astype(np.float32), False, False)
+    self._compare(np.zeros([3, 3, 2]).astype(np.float32),
+                  np.zeros([3, 2, 0]).astype(np.float32), False, False)
 
 
 class BatchMatmulGradientTest(tf.test.TestCase):
@@ -176,9 +174,14 @@ class BatchMatmulGradientTest(tf.test.TestCase):
       z = tf.batch_matmul(inx, iny, adj_x, adj_y)
       loss = tf.reduce_sum(z)
       epsilon = 1e-2
-      ((x_jacob_t, x_jacob_n), (y_jacob_t, y_jacob_n)) = gc.ComputeGradient(
-          [inx, iny], [x.shape, y.shape], loss, [1],
-          x_init_value=[x, y], delta=epsilon)
+      ((x_jacob_t, x_jacob_n),
+       (y_jacob_t, y_jacob_n)) = tf.test.compute_gradient(
+           [inx, iny],
+           [x.shape, y.shape],
+           loss,
+           [1],
+           x_init_value=[x, y],
+           delta=epsilon)
 
     tf.logging.info("x_jacob_t = %s", x_jacob_t.reshape(x.shape))
     tf.logging.info("x_jacob_n = %s", x_jacob_n.reshape(x.shape))

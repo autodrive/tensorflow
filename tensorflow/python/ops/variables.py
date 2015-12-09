@@ -139,6 +139,8 @@ class Variable(object):
   @@graph
   @@op
   """
+  # TODO(touts): Add @@value and @@ref in the docstring above once they are
+  # ready for consumption.
 
   def __init__(self, initial_value, trainable=True, collections=None,
                validate_shape=True, name=None):
@@ -185,28 +187,31 @@ class Variable(object):
       # modify the value of the variable, not the list.
       collections = collections + [ops.GraphKeys.TRAINABLE_VARIABLES]
       # pylint: enable=g-no-augmented-assignment
-    with ops.op_scope([initial_value], name, "Variable") as name:
-      self._initial_value = ops.convert_to_tensor(initial_value,
-                                                  name="initial_value")
-      if not self._initial_value.get_shape().is_fully_defined():
-        if validate_shape:
-          raise ValueError(
-              "initial_value must have a shape specified: %s"
-              % self._initial_value)
-        self._variable = state_ops.variable_op(
-            [], self._initial_value.dtype.base_dtype, set_shape=False,
-            name=name)
-        with ops.device(self._variable.device):
-          self._initializer_op = state_ops.assign(
-              self._variable, self._initial_value, validate_shape=False).op
-      else:
-        self._variable = state_ops.variable_op(
-            self._initial_value.get_shape(),
-            self._initial_value.dtype.base_dtype,
-            name=name)
-        with ops.device(self._variable.device):
-          self._initializer_op = state_ops.assign(
-              self._variable, self._initial_value).op
+    with ops.control_dependencies(None):
+      with ops.op_scope([initial_value], name, "Variable") as name:
+        self._initial_value = ops.convert_to_tensor(initial_value,
+                                                    name="initial_value")
+        if not self._initial_value.get_shape().is_fully_defined():
+          if validate_shape:
+            raise ValueError(
+                "initial_value must have a shape specified: %s"
+                % self._initial_value)
+          self._variable = state_ops.variable_op(
+              [], self._initial_value.dtype.base_dtype, set_shape=False,
+              name=name)
+          with ops.device(self._variable.device):
+            self._initializer_op = state_ops.assign(
+                self._variable, self._initial_value, validate_shape=False).op
+            self._snapshot = array_ops.identity(self._variable, name="read")
+        else:
+          self._variable = state_ops.variable_op(
+              self._initial_value.get_shape(),
+              self._initial_value.dtype.base_dtype,
+              name=name)
+          with ops.device(self._variable.device):
+            self._initializer_op = state_ops.assign(
+                self._variable, self._initial_value).op
+            self._snapshot = array_ops.identity(self._variable, name="read")
     for key in collections:
       ops.add_to_collection(key, self)
     self._save_slice_info = None
@@ -216,7 +221,50 @@ class Variable(object):
     return self._variable
 
   def _AsTensor(self):
-    """Conversion function for ops.convert_to_tensor()."""
+    """Converts this variable to a Tensor.
+
+    See [`value()`](#Variable.value).
+
+    Returns:
+      A `Tensor` containing the value of the variable.
+    """
+    return self._snapshot
+
+  def value(self):
+    """Returns the last snapshot of this variable.
+
+    You usually do not need to call this method as all ops that need the value
+    of the variable call it automatically through a `convert_to_tensor()` call.
+
+    Returns a `Tensor` which holds the value of the variable.  You can not
+    assign a new value to this tensor as it is not a reference to the variable.
+    See [`ref()`](#Variable.ref) if you want to get a reference to the
+    variable.
+
+    To avoid copies, if the consumer of the returned value is on the same device
+    as the variable, this actually returns the live value of the variable, not
+    a copy.  Updates to the variable are seen by the consumer.  If the consumer
+    is on a different device it will get a copy of the variable.
+
+    Returns:
+      A `Tensor` containing the value of the variable.
+    """
+    return self._snapshot
+
+  def ref(self):
+    """Returns a reference to this variable.
+
+    You usually do not need to call this method as all ops that need a reference
+    to the variable call it automatically.
+
+    Returns is a `Tensor` which holds a reference to the variable.  You can
+    assign a new value to the variable by passing the tensor to an assign op.
+    See [`value()`](#Variable.value) if you want to get the value of the
+    variable.
+
+    Returns:
+      A `Tensor` that is a reference to the variable.
+    """
     return self._variable
 
   def eval(self, session=None):
@@ -226,8 +274,8 @@ class Variable(object):
 
     This convenience method requires a session where the graph containing this
     variable has been launched. If no session is passed, the default session is
-    used.  See the [Session class](../../api_docs/python/client.md#Session) for more information on
-    launching a graph and on sessions.
+    used.  See the [Session class](../../api_docs/python/client.md#Session) for
+    more information on launching a graph and on sessions.
 
     ```python
     v = tf.Variable([1, 2])
@@ -270,8 +318,9 @@ class Variable(object):
       A `Tensor` holding the value of this variable after its initializer
       has run.
     """
-    return control_flow_ops.with_dependencies(
-        [self._initializer_op], self._variable)
+    with ops.control_dependencies(None):
+      with ops.control_dependencies([self._initializer_op]):
+        return array_ops.identity(self._variable)
 
   def assign(self, value, use_locking=False):
     """Assigns a new value to the variable.
@@ -366,15 +415,17 @@ class Variable(object):
 
   # Conversion to tensor.
   @staticmethod
-  def _TensorConversionFunction(v, dtype=None, name=None):
+  def _TensorConversionFunction(v, dtype=None, name=None, as_ref=False):
     """Utility function for converting a Variable to a Tensor."""
     _ = name
-    ret = v._AsTensor()  # pylint: disable=protected-access
     if dtype and not dtype.is_compatible_with(v.dtype):
       raise ValueError(
           "Incompatible type conversion requested to type '%s' for variable "
           "of type '%s'" % (dtype.name, v.dtype.name))
-    return ret
+    if as_ref:
+      return v.ref()
+    else:
+      return v.value()
 
   # Operator overloading.
   #
@@ -460,21 +511,35 @@ class Variable(object):
   class SaveSliceInfo(object):
     """Information on how to save this Variable as a slice."""
 
-    def  __init__(self, name, spec):
-      """Create a SliceInfo.
+    def __init__(self, full_name, full_shape, var_offset, var_shape):
+      """Create a `SaveSliceInfo`.
 
       Args:
-        name: Name of the larger Tensor that this variable is a slice of.
-        spec: Slice specification for the saver.
+        full_name: Name of the full variable of which this `Variable` is a
+            slice.
+        full_shape: Shape of the full variable, as a list of int.
+        var_offset: Offset of this `Variable` into the full variable, as a
+            list of int.
+        var_shape: Shape of this `Variable`, as a list of int.
       """
-      self.name = name
-      self.spec = spec
+      self.full_name = full_name
+      self.full_shape = full_shape
+      self.var_offset = var_offset
+      self.var_shape = var_shape
+
+    @property
+    def spec(self):
+      """Computes the spec string used for saving."""
+      full_shape_str = " ".join(["%d" % d for d in self.full_shape]) + " "
+      sl_spec = ":".join([
+          "%d,%d" % (o, s) for o, s in zip(self.var_offset, self.var_shape)])
+      return full_shape_str + sl_spec
 
   def _set_save_slice_info(self, save_slice_info):
-    """Sets the slice info for this Variable.
+    """Sets the slice info for this `Variable`.
 
     Args:
-      save_slice_info: A Variable.SliceInfo object.
+      save_slice_info: A `Variable.SaveSliceInfo` object.
     """
     self._save_slice_info = save_slice_info
 

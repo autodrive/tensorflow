@@ -175,6 +175,9 @@ x.initializer.run()
 sub = tf.sub(x, a)
 print sub.eval()
 # ==> [-2. -1.]
+
+# Close the Session when we're done.
+sess.close()
 ```
 
 ## Tensors
@@ -203,7 +206,6 @@ new_value = tf.add(state, one)
 update = tf.assign(state, new_value)
 
 # Variables must be initialized by running an `init` Op after having
-
 # launched the graph.  We first have to add the `init` Op to the graph.
 init_op = tf.initialize_all_variables()
 
@@ -274,8 +276,8 @@ tf.placeholder() to create them:
 
 ```python
 
-input1 = tf.placeholder(tf.types.float32)
-input2 = tf.placeholder(tf.types.float32)
+input1 = tf.placeholder(tf.float32)
+input2 = tf.placeholder(tf.float32)
 output = tf.mul(input1, input2)
 
 with tf.Session() as sess:

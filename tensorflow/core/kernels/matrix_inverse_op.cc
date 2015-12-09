@@ -45,17 +45,16 @@ class MatrixInverseOp
     const int64 rows = input_matrix_shape.dim_size(0);
     if (rows > (1LL << 20)) {
       // A big number to cap the cost in case overflow.
-      return kint32max;
+      return kint64max;
     } else {
       return rows * rows * rows;
     }
   }
 
-  using typename UnaryLinearAlgebraOp<Scalar, SupportsBatchOperationT>::Matrix;
-  using
-      typename UnaryLinearAlgebraOp<Scalar, SupportsBatchOperationT>::MatrixMap;
-  using typename UnaryLinearAlgebraOp<Scalar,
-                                      SupportsBatchOperationT>::ConstMatrixMap;
+  typedef UnaryLinearAlgebraOp<Scalar, SupportsBatchOperationT> Base;
+  using Matrix = typename Base::Matrix;
+  using MatrixMap = typename Base::MatrixMap;
+  using ConstMatrixMap = typename Base::ConstMatrixMap;
 
   void ComputeMatrix(OpKernelContext* context, const ConstMatrixMap& input,
                      MatrixMap* output) override {

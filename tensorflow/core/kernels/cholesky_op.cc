@@ -46,7 +46,7 @@ class CholeskyOp
     const int64 rows = input_matrix_shape.dim_size(0);
     if (rows > (1LL << 20)) {
       // A big number to cap the cost in case overflow.
-      return kint32max;
+      return kint64max;
     } else {
       return rows * rows * rows;
     }
@@ -69,8 +69,9 @@ class CholeskyOp
     // Perform the actual LL^T Cholesky decomposition. This will only use
     // the lower triangular part of data_in by default. The upper triangular
     // part of the matrix will not be read.
-    Eigen::LLT<Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic,
-                             Eigen::RowMajor>> llt_decomposition(input);
+    Eigen::LLT<
+        Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+        llt_decomposition(input);
 
     // Output the lower triangular in a dense form.
     *output = llt_decomposition.matrixL();

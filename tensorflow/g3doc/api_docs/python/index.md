@@ -7,6 +7,7 @@
   * [`as_dtype`](../../api_docs/python/framework.md#as_dtype)
   * [`control_dependencies`](../../api_docs/python/framework.md#control_dependencies)
   * [`convert_to_tensor`](../../api_docs/python/framework.md#convert_to_tensor)
+  * [`convert_to_tensor_or_indexed_slices`](../../api_docs/python/framework.md#convert_to_tensor_or_indexed_slices)
   * [`device`](../../api_docs/python/framework.md#device)
   * [`Dimension`](../../api_docs/python/framework.md#Dimension)
   * [`DType`](../../api_docs/python/framework.md#DType)
@@ -68,6 +69,7 @@
   * [`uniform_unit_scaling_initializer`](../../api_docs/python/state_ops.md#uniform_unit_scaling_initializer)
   * [`update_checkpoint_state`](../../api_docs/python/state_ops.md#update_checkpoint_state)
   * [`Variable`](../../api_docs/python/state_ops.md#Variable)
+  * [`variable_op_scope`](../../api_docs/python/state_ops.md#variable_op_scope)
   * [`variable_scope`](../../api_docs/python/state_ops.md#variable_scope)
   * [`zeros_initializer`](../../api_docs/python/state_ops.md#zeros_initializer)
 
@@ -110,6 +112,7 @@
   * [`batch_matmul`](../../api_docs/python/math_ops.md#batch_matmul)
   * [`batch_matrix_determinant`](../../api_docs/python/math_ops.md#batch_matrix_determinant)
   * [`batch_matrix_inverse`](../../api_docs/python/math_ops.md#batch_matrix_inverse)
+  * [`batch_self_adjoint_eig`](../../api_docs/python/math_ops.md#batch_self_adjoint_eig)
   * [`ceil`](../../api_docs/python/math_ops.md#ceil)
   * [`cholesky`](../../api_docs/python/math_ops.md#cholesky)
   * [`complex`](../../api_docs/python/math_ops.md#complex)
@@ -151,6 +154,7 @@
   * [`segment_min`](../../api_docs/python/math_ops.md#segment_min)
   * [`segment_prod`](../../api_docs/python/math_ops.md#segment_prod)
   * [`segment_sum`](../../api_docs/python/math_ops.md#segment_sum)
+  * [`self_adjoint_eig`](../../api_docs/python/math_ops.md#self_adjoint_eig)
   * [`sign`](../../api_docs/python/math_ops.md#sign)
   * [`sin`](../../api_docs/python/math_ops.md#sin)
   * [`sparse_segment_mean`](../../api_docs/python/math_ops.md#sparse_segment_mean)
@@ -194,6 +198,9 @@
 * **[Images](../../api_docs/python/image.md)**:
   * [`adjust_brightness`](../../api_docs/python/image.md#adjust_brightness)
   * [`adjust_contrast`](../../api_docs/python/image.md#adjust_contrast)
+  * [`adjust_hue`](../../api_docs/python/image.md#adjust_hue)
+  * [`adjust_saturation`](../../api_docs/python/image.md#adjust_saturation)
+  * [`convert_image_dtype`](../../api_docs/python/image.md#convert_image_dtype)
   * [`crop_to_bounding_box`](../../api_docs/python/image.md#crop_to_bounding_box)
   * [`decode_jpeg`](../../api_docs/python/image.md#decode_jpeg)
   * [`decode_png`](../../api_docs/python/image.md#decode_png)
@@ -202,6 +209,8 @@
   * [`extract_glimpse`](../../api_docs/python/image.md#extract_glimpse)
   * [`flip_left_right`](../../api_docs/python/image.md#flip_left_right)
   * [`flip_up_down`](../../api_docs/python/image.md#flip_up_down)
+  * [`grayscale_to_rgb`](../../api_docs/python/image.md#grayscale_to_rgb)
+  * [`hsv_to_rgb`](../../api_docs/python/image.md#hsv_to_rgb)
   * [`pad_to_bounding_box`](../../api_docs/python/image.md#pad_to_bounding_box)
   * [`per_image_whitening`](../../api_docs/python/image.md#per_image_whitening)
   * [`random_brightness`](../../api_docs/python/image.md#random_brightness)
@@ -209,6 +218,8 @@
   * [`random_crop`](../../api_docs/python/image.md#random_crop)
   * [`random_flip_left_right`](../../api_docs/python/image.md#random_flip_left_right)
   * [`random_flip_up_down`](../../api_docs/python/image.md#random_flip_up_down)
+  * [`random_hue`](../../api_docs/python/image.md#random_hue)
+  * [`random_saturation`](../../api_docs/python/image.md#random_saturation)
   * [`resize_area`](../../api_docs/python/image.md#resize_area)
   * [`resize_bicubic`](../../api_docs/python/image.md#resize_bicubic)
   * [`resize_bilinear`](../../api_docs/python/image.md#resize_bilinear)
@@ -216,6 +227,8 @@
   * [`resize_images`](../../api_docs/python/image.md#resize_images)
   * [`resize_nearest_neighbor`](../../api_docs/python/image.md#resize_nearest_neighbor)
   * [`resize_nearest_neighbor_grad`](../../api_docs/python/image.md#resize_nearest_neighbor_grad)
+  * [`rgb_to_grayscale`](../../api_docs/python/image.md#rgb_to_grayscale)
+  * [`rgb_to_hsv`](../../api_docs/python/image.md#rgb_to_hsv)
   * [`transpose_image`](../../api_docs/python/image.md#transpose_image)
 
 * **[Sparse Tensors](../../api_docs/python/sparse_ops.md)**:
@@ -269,6 +282,7 @@
   * [`conv2d`](../../api_docs/python/nn.md#conv2d)
   * [`depthwise_conv2d`](../../api_docs/python/nn.md#depthwise_conv2d)
   * [`dropout`](../../api_docs/python/nn.md#dropout)
+  * [`elu`](../../api_docs/python/nn.md#elu)
   * [`embedding_lookup`](../../api_docs/python/nn.md#embedding_lookup)
   * [`fixed_unigram_candidate_sampler`](../../api_docs/python/nn.md#fixed_unigram_candidate_sampler)
   * [`in_top_k`](../../api_docs/python/nn.md#in_top_k)
@@ -290,6 +304,7 @@
   * [`softmax`](../../api_docs/python/nn.md#softmax)
   * [`softmax_cross_entropy_with_logits`](../../api_docs/python/nn.md#softmax_cross_entropy_with_logits)
   * [`softplus`](../../api_docs/python/nn.md#softplus)
+  * [`softsign`](../../api_docs/python/nn.md#softsign)
   * [`tanh`](../../api_docs/python/nn.md#tanh)
   * [`top_k`](../../api_docs/python/nn.md#top_k)
   * [`uniform_candidate_sampler`](../../api_docs/python/nn.md#uniform_candidate_sampler)
@@ -349,20 +364,3 @@
   * [`write_graph`](../../api_docs/python/train.md#write_graph)
   * [`zero_fraction`](../../api_docs/python/train.md#zero_fraction)
 
-<div class="sections-order" style="display: none;">
-<!--
-<!-- framework.md -->
-<!-- constant_op.md -->
-<!-- state_ops.md -->
-<!-- array_ops.md -->
-<!-- math_ops.md -->
-<!-- control_flow_ops.md -->
-<!-- image.md -->
-<!-- sparse_ops.md -->
-<!-- io_ops.md -->
-<!-- python_io.md -->
-<!-- nn.md -->
-<!-- client.md -->
-<!-- train.md -->
--->
-</div>
