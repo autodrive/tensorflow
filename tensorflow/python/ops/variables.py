@@ -284,10 +284,10 @@ class Variable(object):
     with tf.Session() as sess:
         sess.run(init)
         # Usage passing the session explicitly.
-        print v.eval(sess)
+        print(v.eval(sess))
         # Usage with the default session.  The 'with' block
         # above makes 'sess' the default session.
-        print v.eval()
+        print(v.eval())
     ```
 
     Args:
@@ -320,7 +320,8 @@ class Variable(object):
     """
     with ops.control_dependencies(None):
       with ops.control_dependencies([self._initializer_op]):
-        return array_ops.identity(self._variable)
+        with ops.device(self._variable.device):
+          return array_ops.identity(self._variable)
 
   def assign(self, value, use_locking=False):
     """Assigns a new value to the variable.

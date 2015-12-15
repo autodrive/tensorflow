@@ -137,6 +137,7 @@ py_library(
         "ops/op_def_library.py",
         "ops/constant_op.py",
     ],
+    srcs_version = "PY2AND3",
     visibility = ["//visibility:public"],
     deps = [
         ":platform",
@@ -236,14 +237,14 @@ py_test(
 )
 
 tf_gen_op_wrapper_py(
-    name = "test_kernel_label_op",
-    out = "framework/test_kernel_label_op.py",
-    deps = [":test_kernel_label_op_kernel"],
+    name = "test_ops",
+    out = "framework/test_ops.py",
+    deps = [":test_ops_kernels"],
 )
 
 cc_library(
-    name = "test_kernel_label_op_kernel",
-    srcs = ["framework/test_kernel_label_op.cc"],
+    name = "test_ops_kernels",
+    srcs = ["framework/test_ops.cc"],
     linkstatic = 1,
     deps = ["//tensorflow/core:framework"],
     alwayslink = 1,
@@ -259,7 +260,7 @@ py_test(
         ":ops",
         ":platform_test",
         ":session",
-        ":test_kernel_label_op",
+        ":test_ops",
     ],
 )
 
@@ -418,6 +419,7 @@ tf_gen_op_wrapper_py(
     hidden = [
         "ResizeBilinearGrad",
         "ResizeNearestNeighborGrad",
+        "AdjustContrastv2",
         "ScaleImageGrad",
     ],
     require_shape_functions = True,
@@ -547,6 +549,7 @@ tf_gen_op_wrapper_py(
         "SerializeManySparse",
         "SerializeSparse",
         "SparseConcat",
+        "SparseSplit",
         "SparseSelectLastK",
         "SparseReorder",
         "SparseToDense",
@@ -638,6 +641,7 @@ py_library(
         "ops/state_ops.py",
         "ops/string_ops.py",
         "ops/summary_ops.py",
+        "ops/template.py",
         "ops/variable_scope.py",
         "ops/variables.py",
         "user_ops/user_ops.py",
@@ -750,7 +754,7 @@ tf_cuda_library(
     hdrs = ["client/tf_session_helper.h"],
     deps = [
         ":construction_fails_op",
-        ":test_kernel_label_op_kernel",
+        ":test_ops_kernels",
         "//tensorflow/core",
         "//tensorflow/core:direct_session",
         "//tensorflow/core:kernels",
@@ -891,10 +895,12 @@ cpu_only_kernel_test_list = glob([
     "kernel_tests/self_adjoint_eig_op_test.py",
     "kernel_tests/sparse_concat_op_test.py",
     "kernel_tests/sparse_matmul_op_test.py",
+    "kernel_tests/sparse_split_op_test.py",
     "kernel_tests/sparse_reorder_op_test.py",
     "kernel_tests/sparse_to_dense_op_test.py",
     "kernel_tests/sparsemask_op_test.py",
     "kernel_tests/summary_ops_test.py",
+    "kernel_tests/template_test.py",
     "kernel_tests/topk_op_test.py",
     "kernel_tests/unique_op_test.py",
     "kernel_tests/variable_scope_test.py",

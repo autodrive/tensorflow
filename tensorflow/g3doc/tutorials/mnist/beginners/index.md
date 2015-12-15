@@ -43,7 +43,7 @@ automatically. You can either download
 and import it as below, or simply copy and paste it in.
 
 ```python
-import tensorflow.examples.tutorials.mnist.input_data
+from tensorflow.examples.tutorials.mnist import input_data
 mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
 ```
 
@@ -410,7 +410,7 @@ accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
 Finally, we ask for our accuracy on our test data.
 
 ```python
-print sess.run(accuracy, feed_dict={x: mnist.test.images, y_: mnist.test.labels})
+print(sess.run(accuracy, feed_dict={x: mnist.test.images, y_: mnist.test.labels}))
 ```
 
 This should be about 91%.

@@ -23,7 +23,7 @@ that initiates computation.
 with tf.Session():
   input = tf.placeholder(tf.float32)
   classifier = ...
-  print classifier.eval(feed_dict={input: my_python_preprocessing_fn()})
+  print(classifier.eval(feed_dict={input: my_python_preprocessing_fn()}))
 ```
 
 While you can replace any Tensor with feed data, including variables and
@@ -287,7 +287,7 @@ try:
         sess.run(train_op)
 
 except tf.errors.OutOfRangeError:
-    print 'Done training -- epoch limit reached'
+    print('Done training -- epoch limit reached')
 finally:
     # When done, ask the threads to stop.
     coord.request_stop()
@@ -437,7 +437,7 @@ with tf.Session() as sess:
   sess.run(input_data.initializer,
            feed_dict={data_initializer: training_data})
   sess.run(input_labels.initializer,
-           feed_dict={label_initializer: training_lables})
+           feed_dict={label_initializer: training_labels})
 ```
 
 Setting `trainable=False` keeps the variable out of the
