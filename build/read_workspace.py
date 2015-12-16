@@ -74,7 +74,7 @@ def get_workspace_entries(text):
                 if '(' != c:
                     type_name += c
                 else:
-                    entry = {'type':type_name}
+                    entry = init_entry(key='type', value=type_name)
                     state = 'dictionary_key'
                     key_name = ''
         elif 'dictionary_key' == state:
@@ -114,9 +114,22 @@ def end_of_entry(workspace, entry):
         workspace[entry['type']][entry['name']] = entry
     else:
         workspace[entry['type']] = {entry['name']:entry}
-    entry = {}
+    entry = init_entry()
     state = 'before'
     return entry, state
+
+
+def init_entry(key=None, value=None):
+    """
+    as a dictionary. If key and value given, initialize.
+    :param key:
+    :param value:
+    :return:
+    """
+    entry = {}
+    if key and value:
+        entry[key] = value
+    return entry
 
 
 if '__main__' == __name__:
