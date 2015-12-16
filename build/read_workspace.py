@@ -84,18 +84,14 @@ def get_workspace_entries(text):
                     state = 'dictionary_value'
                     value = ''
                 elif ')' == c:
-                    result[entry['name']] = entry
-                    entry = {}
-                    state = 'before'
+                    entry, state = end_of_entry(result, entry)
                 else:
                     key_name += c
 
         elif 'dictionary_value' == state:
             if c.strip():
                 if ')' == c:
-                    result[entry['name']] = entry
-                    entry = {}
-                    state = 'before'
+                    entry, state = end_of_entry(result, entry)
                 elif ',' != c:
                     value += c
                 else:
@@ -104,6 +100,23 @@ def get_workspace_entries(text):
                     key_name = ''
 
     return result
+
+
+def end_of_entry(workspace, entry):
+    """
+    add entry to workspace
+
+    :param workspace: dictionary with types as keys and list of entries as values
+    :param entry: dictionary
+    :return:
+    """
+    if workspace.has_key(entry['type']):
+        workspace[entry['type']].append(entry)
+    else:
+        workspace[entry['type']] = [entry]
+    entry = {}
+    state = 'before'
+    return entry, state
 
 
 if '__main__' == __name__:
