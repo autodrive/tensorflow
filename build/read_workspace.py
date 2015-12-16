@@ -62,7 +62,7 @@ def get_workspace_entries(text):
     :return result: list of entries
     """
 
-    result = []
+    result = {}
     state = 'before'
     for c in text:
         if 'before' == state:
@@ -74,7 +74,7 @@ def get_workspace_entries(text):
                 if '(' != c:
                     type_name += c
                 else:
-                    entry = [type_name,{}]
+                    entry = {'type':type_name}
                     state = 'dictionary_key'
                     key_name = ''
         elif 'dictionary_key' == state:
@@ -84,8 +84,8 @@ def get_workspace_entries(text):
                     state = 'dictionary_value'
                     value = ''
                 elif ')' == c:
-                    result.append(entry)
-                    entry = []
+                    result[entry['name']] = entry
+                    entry = {}
                     state = 'before'
                 else:
                     key_name += c
@@ -93,13 +93,13 @@ def get_workspace_entries(text):
         elif 'dictionary_value' == state:
             if c.strip():
                 if ')' == c:
-                    result.append(entry)
-                    entry = []
+                    result[entry['name']] = entry
+                    entry = {}
                     state = 'before'
                 elif ',' != c:
                     value += c
                 else:
-                    entry[1][key_name] = value
+                    entry[key_name] = value
                     state = 'dictionary_key'
                     key_name = ''
 
