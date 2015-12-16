@@ -68,13 +68,13 @@ def get_workspace_entries(text):
         if 'before' == state:
             if c.strip():
                 state = 'entry_found'
-                entry_name = c
+                type_name = c
         elif 'entry_found' == state:
             if c.strip():
                 if '(' != c:
-                    entry_name += c
+                    type_name += c
                 else:
-                    entry = [entry_name,{}]
+                    entry = [type_name,{}]
                     state = 'dictionary_key'
                     key_name = ''
         elif 'dictionary_key' == state:
