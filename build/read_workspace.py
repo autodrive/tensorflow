@@ -106,14 +106,14 @@ def end_of_entry(workspace, entry):
     """
     add entry to workspace
 
-    :param workspace: dictionary with types as keys and list of entries as values
+    :param workspace: dictionary. keys are types and values are dictionaries with names:entries
     :param entry: dictionary
     :return:
     """
-    if workspace.has_key(entry['type']):
-        workspace[entry['type']].append(entry)
+    if entry['type'] in workspace:
+        workspace[entry['type']][entry['name']] = entry
     else:
-        workspace[entry['type']] = [entry]
+        workspace[entry['type']] = {entry['name']:entry}
     entry = {}
     state = 'before'
     return entry, state
