@@ -18,12 +18,14 @@ limitations under the License.
 
 #include <unordered_map>
 
+#include <vector>
 #include "tensorflow/core/framework/attr_value_util.h"
 #include "tensorflow/core/framework/function.pb.h"
 #include "tensorflow/core/framework/graph.pb.h"
 #include "tensorflow/core/framework/node_def_util.h"
 #include "tensorflow/core/framework/op.h"
 #include "tensorflow/core/framework/types.h"
+#include "tensorflow/core/platform/macros.h"
 #include "tensorflow/core/platform/protobuf.h"
 
 namespace tensorflow {
@@ -81,7 +83,7 @@ class FunctionDefHelper {
     return FunctionRef(name, {});
   }
 
-  // Node is used to consturct FunctionDef.Node using initialization
+  // Node is used to construct FunctionDef.Node using initialization
   // lists. E.g.,
   //  Node n = {{"z"}, "Mul", {"x", "y"}, {{"T", "$T"}}};  // z = x * y
   struct Node {
@@ -125,7 +127,7 @@ class FunctionDefHelper {
     n.attr.push_back({"dtype", dtype});
     int64 num = vals.size();
     Tensor t(dtype, TensorShape({num}));
-    for (int i = 0; i < vals.size(); ++i) {
+    for (size_t i = 0; i < vals.size(); ++i) {
       t.flat<T>()(i) = vals[i];
     }
     n.attr.push_back({"value", t});
@@ -315,8 +317,8 @@ class FunctionLibraryRuntime {
   // returned "*kernel". Otherwise, returns an error.
   virtual Status CreateKernel(const NodeDef& ndef, OpKernel** kernel) = 0;
 
-  // Return true iff 'function_name' is the name of a defined function.
-  virtual bool IsDefined(const string& function_name) = 0;
+  // Return true iff 'function' is stateful.
+  virtual bool IsStateful(const string& function_name) = 0;
 };
 
 // To register a gradient function for a builtin op, one should use

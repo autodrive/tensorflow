@@ -18,8 +18,11 @@ limitations under the License.
 #define USE_EIGEN_TENSOR
 #define EIGEN_USE_THREADS
 
+#include <vector>
 #include "tensorflow/core/framework/numeric_op.h"
 #include "tensorflow/core/framework/op_kernel.h"
+#include "tensorflow/core/framework/tensor.h"
+#include "tensorflow/core/framework/tensor_shape.h"
 #include "tensorflow/core/framework/tensor_slice.h"
 #include "tensorflow/core/kernels/conv_2d.h"
 #include "tensorflow/core/kernels/ops_util.h"
@@ -27,15 +30,14 @@ limitations under the License.
 #include "tensorflow/core/lib/gtl/array_slice.h"
 #include "tensorflow/core/lib/strings/numbers.h"
 #include "tensorflow/core/platform/logging.h"
-#include "tensorflow/core/public/tensor.h"
-#include "tensorflow/core/public/tensor_shape.h"
+#include "tensorflow/core/platform/macros.h"
 #include "tensorflow/core/util/padding.h"
 #include "tensorflow/core/util/use_cudnn.h"
 
 #if GOOGLE_CUDA
-#include "tensorflow/stream_executor/stream.h"
 #include "tensorflow/core/common_runtime/gpu_device_context.h"
 #include "tensorflow/core/kernels/conv_ops_gpu.h"
+#include "tensorflow/core/platform/stream_executor.h"
 #endif  // GOOGLE_CUDA
 
 namespace tensorflow {
@@ -124,10 +126,10 @@ class Conv2DOp : public BinaryOp<T> {
     // For 2D convolution, there should be 4 dimensions.
     OP_REQUIRES(context, input.dims() == 4,
                 errors::InvalidArgument("input must be 4-dimensional",
-                                        input.shape().ShortDebugString()));
+                                        input.shape().DebugString()));
     OP_REQUIRES(context, filter.dims() == 4,
                 errors::InvalidArgument("filter must be 4-dimensional: ",
-                                        filter.shape().ShortDebugString()));
+                                        filter.shape().DebugString()));
 
     // The last dimension for input is in_depth. It must be the same as the
     // filter's in_depth.
@@ -261,6 +263,8 @@ struct LaunchConvOp<GPUDevice, T> {
         }
         return;
       }
+      int padding_rows = 0;
+      int padding_cols = 0;
       if (padding == Eigen::PADDING_SAME) {
         const int64 out_rows = output->dim_size(1);
         const int64 out_cols = output->dim_size(2);
@@ -276,23 +280,26 @@ struct LaunchConvOp<GPUDevice, T> {
         // We pad Pr/2 on the left and Pr - Pr/2 on the right, Pc/2 on the top
         // and Pc - Pc/2 on the bottom.  When Pr or Pc is odd, this means
         // we pad more on the right and bottom than on the top and left.
-        const int padding_rows = (out_rows - 1) * stride + patch_rows - in_rows;
-        const int padding_cols = (out_cols - 1) * stride + patch_cols - in_cols;
-        Tensor transformed_input;
-        OP_REQUIRES_OK(
-            ctx, ctx->allocate_temp(
-                     DataTypeToEnum<T>::value,
-                     TensorShape(
-                         {input.dim_size(0), input.dim_size(1) + padding_rows,
-                          input.dim_size(2) + padding_cols, input.dim_size(3)}),
-                     &transformed_input));
+        padding_rows = (out_rows - 1) * stride + patch_rows - in_rows;
+        padding_cols = (out_cols - 1) * stride + patch_cols - in_cols;
+        const bool rows_odd = (padding_rows % 2 != 0);
+        const bool cols_odd = (padding_cols % 2 != 0);
+        if (rows_odd || cols_odd) {
+          Tensor transformed_input;
+          OP_REQUIRES_OK(
+              ctx, ctx->allocate_temp(
+                       DataTypeToEnum<T>::value,
+                       TensorShape(
+                           {input.dim_size(0), input.dim_size(1) + rows_odd,
+                            input.dim_size(2) + cols_odd, input.dim_size(3)}),
+                       &transformed_input));
 
-        functor::PadInput<GPUDevice, T, int>()(
-            ctx->eigen_device<GPUDevice>(), To32Bit(input_param.tensor<T, 4>()),
-            padding_rows / 2, padding_rows - padding_rows / 2, padding_cols / 2,
-            padding_cols - padding_cols / 2,
-            To32Bit(transformed_input.tensor<T, 4>()));
-        input = transformed_input;
+          functor::PadInput<GPUDevice, T, int>()(
+              ctx->eigen_device<GPUDevice>(),
+              To32Bit(input_param.tensor<T, 4>()), 0, rows_odd, 0, cols_odd,
+              To32Bit(transformed_input.tensor<T, 4>()));
+          input = transformed_input;
+        }
       }
 
       {
@@ -330,7 +337,9 @@ struct LaunchConvOp<GPUDevice, T> {
           .set_output_feature_map_count(filter.dim_size(3));
       perftools::gputools::dnn::ConvolutionDescriptor conv_desc;
       conv_desc.set_vertical_filter_stride(stride)
-          .set_horizontal_filter_stride(stride);
+          .set_horizontal_filter_stride(stride)
+          .set_zero_padding_height(padding_rows / 2)
+          .set_zero_padding_width(padding_cols / 2);
 
       Tensor transformed_filter;
       OP_REQUIRES_OK(ctx,
@@ -362,7 +371,7 @@ struct LaunchConvOp<GPUDevice, T> {
                          transformed_output.template flat<T>().size());
 
       static int64 ConvolveScratchSize = GetCudnnWorkspaceLimit(
-          "TF_CUDNN_WORKSPACE_LIMIT_IN_MB", 1LL << 30  // 1GB by default
+          "TF_CUDNN_WORKSPACE_LIMIT_IN_MB", 1LL << 32  // 4GB by default
           );
       CudnnScratchAllocator scratch_allocator(ConvolveScratchSize, ctx);
       bool cudnn_launch_status =

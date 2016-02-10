@@ -11,7 +11,7 @@ Note: Functions taking `Tensor` arguments can also take anything accepted by
 
 TensorFlow provides Ops to decode and encode JPEG and PNG formats.  Encoded
 images are represented by scalar string Tensors, decoded images by 3-D uint8
-tensors of shape `[height, width, channels]`.
+tensors of shape `[height, width, channels]`. (PNG also supports uint16.)
 
 The encode and decode Ops apply to one image at a time.  Their input and output
 are all of variable size.  If you need fixed size images, pass the output of
@@ -122,9 +122,9 @@ in function of the number of channels in `image`:
 
 - - -
 
-### `tf.image.decode_png(contents, channels=None, name=None)` {#decode_png}
+### `tf.image.decode_png(contents, channels=None, dtype=None, name=None)` {#decode_png}
 
-Decode a PNG-encoded image to a uint8 tensor.
+Decode a PNG-encoded image to a uint8 or uint16 tensor.
 
 The attr `channels` indicates the desired number of color channels for the
 decoded image.
@@ -145,11 +145,12 @@ of color channels.
 *  <b>`contents`</b>: A `Tensor` of type `string`. 0-D.  The PNG-encoded image.
 *  <b>`channels`</b>: An optional `int`. Defaults to `0`.
     Number of color channels for the decoded image.
+*  <b>`dtype`</b>: An optional `tf.DType` from: `tf.uint8, tf.uint16`. Defaults to `tf.uint8`.
 *  <b>`name`</b>: A name for the operation (optional).
 
 ##### Returns:
 
-  A `Tensor` of type `uint8`. 3-D with shape `[height, width, channels]`.
+  A `Tensor` of type `dtype`. 3-D with shape `[height, width, channels]`.
 
 
 - - -
@@ -158,8 +159,8 @@ of color channels.
 
 PNG-encode an image.
 
-`image` is a 3-D uint8 Tensor of shape `[height, width, channels]` where
-`channels` is:
+`image` is a 3-D uint8 or uint16 Tensor of shape `[height, width, channels]`
+where `channels` is:
 
 *   1: for grayscale.
 *   3: for RGB.
@@ -172,7 +173,7 @@ the smallest output, but is slower.
 ##### Args:
 
 
-*  <b>`image`</b>: A `Tensor` of type `uint8`.
+*  <b>`image`</b>: A `Tensor`. Must be one of the following types: `uint8`, `uint16`.
     3-D with shape `[height, width, channels]`.
 *  <b>`compression`</b>: An optional `int`. Defaults to `-1`. Compression level.
 *  <b>`name`</b>: A name for the operation (optional).
@@ -207,7 +208,7 @@ resized_image = tf.image.resize_images(image, 299, 299)
 
 - - -
 
-### `tf.image.resize_images(images, new_height, new_width, method=0)` {#resize_images}
+### `tf.image.resize_images(images, new_height, new_width, method=0, align_corners=False)` {#resize_images}
 
 Resize `images` to `new_width`, `new_height` using the specified `method`.
 
@@ -233,6 +234,8 @@ the same as `new_width`, `new_height`.  To avoid distortions see
 *  <b>`new_height`</b>: integer.
 *  <b>`new_width`</b>: integer.
 *  <b>`method`</b>: ResizeMethod.  Defaults to `ResizeMethod.BILINEAR`.
+*  <b>`align_corners`</b>: bool. If true, exactly align all 4 cornets of the input and
+                 output. Defaults to `false`.
 
 ##### Raises:
 
@@ -252,7 +255,7 @@ the same as `new_width`, `new_height`.  To avoid distortions see
 
 - - -
 
-### `tf.image.resize_area(images, size, name=None)` {#resize_area}
+### `tf.image.resize_area(images, size, align_corners=None, name=None)` {#resize_area}
 
 Resize `images` to `size` using area interpolation.
 
@@ -261,10 +264,14 @@ Input images can be of different types but output images are always float.
 ##### Args:
 
 
-*  <b>`images`</b>: A `Tensor`. Must be one of the following types: `uint8`, `int8`, `int32`, `float32`, `float64`.
+*  <b>`images`</b>: A `Tensor`. Must be one of the following types: `uint8`, `int8`, `int16`, `int32`, `int64`, `float32`, `float64`.
     4-D with shape `[batch, height, width, channels]`.
 *  <b>`size`</b>: A 1-D int32 Tensor of 2 elements: `new_height, new_width`.  The
     new size for the images.
+*  <b>`align_corners`</b>: An optional `bool`. Defaults to `False`.
+    If true, rescale input by (new_height - 1) / (height - 1), which
+    exactly aligns the 4 corners of images and resized images. If false, rescale
+    by new_height / height. Treat similarly the width dimension.
 *  <b>`name`</b>: A name for the operation (optional).
 
 ##### Returns:
@@ -275,7 +282,7 @@ Input images can be of different types but output images are always float.
 
 - - -
 
-### `tf.image.resize_bicubic(images, size, name=None)` {#resize_bicubic}
+### `tf.image.resize_bicubic(images, size, align_corners=None, name=None)` {#resize_bicubic}
 
 Resize `images` to `size` using bicubic interpolation.
 
@@ -284,10 +291,14 @@ Input images can be of different types but output images are always float.
 ##### Args:
 
 
-*  <b>`images`</b>: A `Tensor`. Must be one of the following types: `uint8`, `int8`, `int32`, `float32`, `float64`.
+*  <b>`images`</b>: A `Tensor`. Must be one of the following types: `uint8`, `int8`, `int16`, `int32`, `int64`, `float32`, `float64`.
     4-D with shape `[batch, height, width, channels]`.
 *  <b>`size`</b>: A 1-D int32 Tensor of 2 elements: `new_height, new_width`.  The
     new size for the images.
+*  <b>`align_corners`</b>: An optional `bool`. Defaults to `False`.
+    If true, rescale input by (new_height - 1) / (height - 1), which
+    exactly aligns the 4 corners of images and resized images. If false, rescale
+    by new_height / height. Treat similarly the width dimension.
 *  <b>`name`</b>: A name for the operation (optional).
 
 ##### Returns:
@@ -298,7 +309,7 @@ Input images can be of different types but output images are always float.
 
 - - -
 
-### `tf.image.resize_bilinear(images, size, name=None)` {#resize_bilinear}
+### `tf.image.resize_bilinear(images, size, align_corners=None, name=None)` {#resize_bilinear}
 
 Resize `images` to `size` using bilinear interpolation.
 
@@ -307,10 +318,14 @@ Input images can be of different types but output images are always float.
 ##### Args:
 
 
-*  <b>`images`</b>: A `Tensor`. Must be one of the following types: `uint8`, `int8`, `int32`, `float32`, `float64`.
+*  <b>`images`</b>: A `Tensor`. Must be one of the following types: `uint8`, `int8`, `int16`, `int32`, `int64`, `float32`, `float64`.
     4-D with shape `[batch, height, width, channels]`.
 *  <b>`size`</b>: A 1-D int32 Tensor of 2 elements: `new_height, new_width`.  The
     new size for the images.
+*  <b>`align_corners`</b>: An optional `bool`. Defaults to `False`.
+    If true, rescale input by (new_height - 1) / (height - 1), which
+    exactly aligns the 4 corners of images and resized images. If false, rescale
+    by new_height / height. Treat similarly the width dimension.
 *  <b>`name`</b>: A name for the operation (optional).
 
 ##### Returns:
@@ -321,17 +336,21 @@ Input images can be of different types but output images are always float.
 
 - - -
 
-### `tf.image.resize_nearest_neighbor(images, size, name=None)` {#resize_nearest_neighbor}
+### `tf.image.resize_nearest_neighbor(images, size, align_corners=None, name=None)` {#resize_nearest_neighbor}
 
 Resize `images` to `size` using nearest neighbor interpolation.
 
 ##### Args:
 
 
-*  <b>`images`</b>: A `Tensor`. Must be one of the following types: `uint8`, `int8`, `int32`, `float32`, `float64`.
+*  <b>`images`</b>: A `Tensor`. Must be one of the following types: `uint8`, `int8`, `int16`, `int32`, `int64`, `float32`, `float64`.
     4-D with shape `[batch, height, width, channels]`.
 *  <b>`size`</b>: A 1-D int32 Tensor of 2 elements: `new_height, new_width`.  The
     new size for the images.
+*  <b>`align_corners`</b>: An optional `bool`. Defaults to `False`.
+    If true, rescale input by (new_height - 1) / (height - 1), which
+    exactly aligns the 4 corners of images and resized images. If false, rescale
+    by new_height / height. Treat similarly the width dimension.
 *  <b>`name`</b>: A name for the operation (optional).
 
 ##### Returns:
@@ -442,30 +461,6 @@ lower-right corner is at
 
 *  <b>`ValueError`</b>: If the shape of `image` is incompatible with the `offset_*` or
   `target_*` arguments
-
-
-- - -
-
-### `tf.image.random_crop(image, size, seed=None, name=None)` {#random_crop}
-
-Randomly crops `image` to size `[target_height, target_width]`.
-
-The offset of the output within `image` is uniformly random. `image` always
-fully contains the result.
-
-##### Args:
-
-
-*  <b>`image`</b>: 3-D tensor of shape `[height, width, channels]`
-*  <b>`size`</b>: 1-D tensor with two elements, specifying target `[height, width]`
-*  <b>`seed`</b>: A Python integer. Used to create a random seed. See
-    [`set_random_seed`](../../api_docs/python/constant_op.md#set_random_seed)
-    for behavior.
-*  <b>`name`</b>: A name for this operation (optional).
-
-##### Returns:
-
-  A cropped 3-D tensor of shape `[target_height, target_width, channels]`.
 
 
 - - -
@@ -685,7 +680,7 @@ Example:
 # Decode an image and convert it to HSV.
 rgb_image = tf.decode_png(...,  channels=3)
 rgb_image_float = tf.convert_image_dtype(rgb_image, tf.float32)
-hsv_image = tf.hsv_to_rgb(rgb_image)
+hsv_image = tf.rgb_to_hsv(rgb_image)
 ```
 
 - - -
@@ -782,27 +777,32 @@ corresponds to pure red, hue 1/3 is pure green, and 2/3 is pure blue.
 
 - - -
 
-### `tf.image.convert_image_dtype(image, dtype, name=None)` {#convert_image_dtype}
+### `tf.image.convert_image_dtype(image, dtype, saturate=False, name=None)` {#convert_image_dtype}
 
 Convert `image` to `dtype`, scaling its values if needed.
 
 Images that are represented using floating point values are expected to have
 values in the range [0,1). Image data stored in integer data types are
-expected to have values in the range `[0,MAX]`, wbere `MAX` is the largest
+expected to have values in the range `[0,MAX]`, where `MAX` is the largest
 positive representable number for the data type.
 
 This op converts between data types, scaling the values appropriately before
 casting.
 
-Note that for floating point inputs, this op expects values to lie in [0,1).
-Conversion of an image containing values outside that range may lead to
-overflow errors when converted to integer `Dtype`s.
+Note that converting from floating point inputs to integer types may lead to
+over/underflow problems. Set saturate to `True` to avoid such problem in
+problematic conversions. If enabled, saturation will clip the output into the
+allowed range before performing a potentially dangerous cast (and only before
+performing such a cast, i.e., when casting from a floating point to an integer
+type, and when casting from a signed to an unsigned type; `saturate` has no
+effect on casts between floats, or on casts that increase the type's range).
 
 ##### Args:
 
 
 *  <b>`image`</b>: An image.
 *  <b>`dtype`</b>: A `DType` to convert `image` to.
+*  <b>`saturate`</b>: If `True`, clip the input before casting (if necessary).
 *  <b>`name`</b>: A name for this operation (optional).
 
 ##### Returns:
@@ -824,29 +824,30 @@ type and representation (RGB or HSV).
 
 - - -
 
-### `tf.image.adjust_brightness(image, delta, min_value=None, max_value=None)` {#adjust_brightness}
+### `tf.image.adjust_brightness(image, delta)` {#adjust_brightness}
 
 Adjust the brightness of RGB or Grayscale images.
 
-The value `delta` is added to all components of the tensor `image`. `image`
-and `delta` are cast to `float` before adding, and the resulting values are
-clamped to `[min_value, max_value]`. Finally, the result is cast back to
-`images.dtype`.
+This is a convenience method that converts an RGB image to float
+representation, adjusts its brightness, and then converts it back to the
+original data type. If several adjustments are chained it is advisable to
+minimize the number of redundant conversions.
 
-If `min_value` or `max_value` are not given, they are set to the minimum and
-maximum allowed values for `image.dtype` respectively.
+The value `delta` is added to all components of the tensor `image`. Both
+`image` and `delta` are converted to `float` before adding (and `image` is
+scaled appropriately if it is in fixed-point representation). For regular
+images, `delta` should be in the range `[0,1)`, as it is added to the image in
+floating point representation, where pixel values are in the `[0,1)` range.
 
 ##### Args:
 
 
 *  <b>`image`</b>: A tensor.
 *  <b>`delta`</b>: A scalar. Amount to add to the pixel values.
-*  <b>`min_value`</b>: Minimum value for output.
-*  <b>`max_value`</b>: Maximum value for output.
 
 ##### Returns:
 
-  A tensor of the same shape and type as `image`.
+  A brightness-adjusted tensor of the same shape and type as `image`.
 
 
 - - -
@@ -858,14 +859,10 @@ Adjust the brightness of images by a random factor.
 Equivalent to `adjust_brightness()` using a `delta` randomly picked in the
 interval `[-max_delta, max_delta)`.
 
-Note that `delta` is picked as a float. Because for integer type images,
-the brightness adjusted result is rounded before casting, integer images may
-have modifications in the range `[-max_delta,max_delta]`.
-
 ##### Args:
 
 
-*  <b>`image`</b>: 3-D tensor of shape `[height, width, channels]`.
+*  <b>`image`</b>: An image.
 *  <b>`max_delta`</b>: float, must be non-negative.
 *  <b>`seed`</b>: A Python integer. Used to create a random seed. See
     [`set_random_seed`](../../api_docs/python/constant_op.md#set_random_seed)
@@ -873,7 +870,7 @@ have modifications in the range `[-max_delta,max_delta]`.
 
 ##### Returns:
 
-  3-D tensor of images of shape `[height, width, channels]`
+  The brightness-adjusted image.
 
 ##### Raises:
 
@@ -884,9 +881,14 @@ have modifications in the range `[-max_delta,max_delta]`.
 
 - - -
 
-### `tf.image.adjust_contrast(images, contrast_factor, min_value=None, max_value=None)` {#adjust_contrast}
+### `tf.image.adjust_contrast(images, contrast_factor)` {#adjust_contrast}
 
 Adjust contrast of RGB or grayscale images.
+
+This is a convenience method that converts an RGB image to float
+representation, adjusts its contrast, and then converts it back to the
+original data type. If several adjustments are chained it is advisable to
+minimize the number of redundant conversions.
 
 `images` is a tensor of at least 3 dimensions.  The last 3 dimensions are
 interpreted as `[height, width, channels]`.  The other dimensions only
@@ -894,48 +896,34 @@ represent a collection of images, such as `[batch, height, width, channels].`
 
 Contrast is adjusted independently for each channel of each image.
 
-For each channel, this Op first computes the mean of the image pixels in the
+For each channel, this Op computes the mean of the image pixels in the
 channel and then adjusts each component `x` of each pixel to
 `(x - mean) * contrast_factor + mean`.
-
-The adjusted values are then clipped to fit in the `[min_value, max_value]`
-interval. If `min_value` or `max_value` is not given, it is replaced with the
-minimum and maximum values for the data type of `images` respectively.
-
-The contrast-adjusted image is always computed as `float`, and it is
-cast back to its original type after clipping.
 
 ##### Args:
 
 
 *  <b>`images`</b>: Images to adjust.  At least 3-D.
 *  <b>`contrast_factor`</b>: A float multiplier for adjusting contrast.
-*  <b>`min_value`</b>: Minimum value for clipping the adjusted pixels.
-*  <b>`max_value`</b>: Maximum value for clipping the adjusted pixels.
 
 ##### Returns:
 
   The constrast-adjusted image or images.
-
-##### Raises:
-
-
-*  <b>`ValueError`</b>: if the arguments are invalid.
 
 
 - - -
 
 ### `tf.image.random_contrast(image, lower, upper, seed=None)` {#random_contrast}
 
-Adjust the contrase of an image by a random factor.
+Adjust the contrast of an image by a random factor.
 
-Equivalent to `adjust_constrast()` but uses a `contrast_factor` randomly
+Equivalent to `adjust_contrast()` but uses a `contrast_factor` randomly
 picked in the interval `[lower, upper]`.
 
 ##### Args:
 
 
-*  <b>`image`</b>: 3-D tensor of shape `[height, width, channels]`.
+*  <b>`image`</b>: An image tensor with 3 or more dimensions.
 *  <b>`lower`</b>: float.  Lower bound for the random contrast factor.
 *  <b>`upper`</b>: float.  Upper bound for the random contrast factor.
 *  <b>`seed`</b>: A Python integer. Used to create a random seed. See
@@ -944,7 +932,7 @@ picked in the interval `[lower, upper]`.
 
 ##### Returns:
 
-  3-D tensor of shape `[height, width, channels]`.
+  The contrast-adjusted tensor.
 
 ##### Raises:
 
@@ -1018,7 +1006,7 @@ picked in the interval `[-max_delta, max_delta]`.
 
 ### `tf.image.adjust_saturation(image, saturation_factor, name=None)` {#adjust_saturation}
 
-Adjust staturation of an RGB image.
+Adjust saturation of an RGB image.
 
 This is a convenience method that converts an RGB image to float
 representation, converts it to HSV, add an offset to the saturation channel,
@@ -1081,7 +1069,7 @@ Linearly scales `image` to have zero mean and unit norm.
 
 This op computes `(x - mean) / adjusted_stddev`, where `mean` is the average
 of all values in image, and
-`adjusted_stddev = max(stddev, 1.0/srqt(image.NumElements()))`.
+`adjusted_stddev = max(stddev, 1.0/sqrt(image.NumElements()))`.
 
 `stddev` is the standard deviation of all values in `image`. It is capped
 away from zero to protect against division by 0 when handling uniform images.
@@ -1103,5 +1091,28 @@ Note that this implementation is limited:
 
 
 *  <b>`ValueError`</b>: if the shape of 'image' is incompatible with this function.
+
+
+
+## Other Functions and Classes
+- - -
+
+### `tf.image.saturate_cast(image, dtype)` {#saturate_cast}
+
+Performs a safe cast of image data to `dtype`.
+
+This function casts the data in image to `dtype`, without applying any
+scaling. If there is a danger that image data would over or underflow in the
+cast, this op applies the appropriate clamping before the cast.
+
+##### Args:
+
+
+*  <b>`image`</b>: An image to cast to a different data type.
+*  <b>`dtype`</b>: A `DType` to cast `image` to.
+
+##### Returns:
+
+  `image`, safely cast to `dtype`.
 
 

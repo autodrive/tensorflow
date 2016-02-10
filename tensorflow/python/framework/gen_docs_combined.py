@@ -45,12 +45,12 @@ Note: Functions taking `Tensor` arguments can also take anything accepted by
 
 
 def get_module_to_name():
-  return {tf: 'tf',
-          tf.errors: 'tf.errors',
-          tf.image: 'tf.image',
-          tf.nn: 'tf.nn',
-          tf.train: 'tf.train',
-          tf.python_io: 'tf.python_io'}
+  return {tf: "tf",
+          tf.errors: "tf.errors",
+          tf.image: "tf.image",
+          tf.nn: "tf.nn",
+          tf.train: "tf.train",
+          tf.python_io: "tf.python_io",}
 
 def all_libraries(module_to_name, members, documented):
   # A list of (filename, docs.Library) pairs representing the individual files
@@ -86,13 +86,14 @@ def all_libraries(module_to_name, members, documented):
               prefix=PREFIX_TEXT),
       library("io_ops", "Inputs and Readers",
               exclude_symbols=["LookupTableBase", "HashTable",
+                               "PaddingFIFOQueue",
                                "initialize_all_tables",
                                "parse_single_sequence_example",
                                "string_to_hash_bucket"],
               prefix=PREFIX_TEXT),
       library("python_io", "Data IO (Python functions)", tf.python_io),
       library("nn", "Neural Network", tf.nn,
-              exclude_symbols=["deconv2d", "conv2d_backprop_input",
+              exclude_symbols=["conv2d_backprop_input",
                                "conv2d_backprop_filter", "avg_pool_grad",
                                "max_pool_grad", "max_pool_grad_with_argmax",
                                "batch_norm_with_global_normalization_grad",
@@ -105,17 +106,23 @@ def all_libraries(module_to_name, members, documented):
                                "rnn", "state_saving_rnn", "bidirectional_rnn",
                                "dynamic_rnn", "seq2seq", "rnn_cell"],
               prefix=PREFIX_TEXT),
-      library('client', "Running Graphs", client_lib),
+      library("client", "Running Graphs", client_lib),
       library("train", "Training", tf.train,
               exclude_symbols=["Feature", "Features", "BytesList", "FloatList",
                                "Int64List", "Example", "InferenceExample",
                                "FeatureList", "FeatureLists",
                                "RankingExample", "SequenceExample"]),
+      library("script_ops", "Wraps python functions", prefix=PREFIX_TEXT),
   ]
 
-_hidden_symbols = ["Event", "Summary", "xrange",
+_hidden_symbols = ["Event", "LogMessage", "Summary", "SessionLog", "xrange",
                    "HistogramProto", "ConfigProto", "NodeDef", "GraphDef",
-                   "GPUOptions", "SessionInterface", "BaseSession"]
+                   "GPUOptions", "GraphOptions", "SessionInterface",
+                   "BaseSession", "NameAttrList", "AttrValue",
+                   "TensorArray", "OptimizerOptions",
+                   "CollectionDef", "MetaGraphDef", "QueueRunnerDef",
+                   "SaverDef", "VariableDef",
+                  ]
 
 def main(unused_argv):
   if not FLAGS.out_dir:

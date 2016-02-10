@@ -22,7 +22,7 @@ python translate.py --data_dir [your_data_directory]
 It will download English-to-French translation data from the
 [WMT'15 Website](http://www.statmt.org/wmt15/translation-task.html)
 prepare it for training and train. It takes about 20GB of disk space,
-and a while to download and prepare (see [later](#run_it) for details),
+and a while to download and prepare (see [later](#lets-run-it) for details),
 so you can start and leave it running while reading this tutorial.
 
 This tutorial references the following files from `models/rnn`.
@@ -50,7 +50,7 @@ This basic architecture is depicted below.
 Each box in the picture above represents a cell of the RNN, most commonly
 a GRU cell or an LSTM cell (see the [RNN Tutorial](../../tutorials/recurrent/index.md)
 for an explanation of those). Encoder and decoder can share weights or,
-as is more common, use a different set of parameters. Mutli-layer cells
+as is more common, use a different set of parameters. Multi-layer cells
 have been successfully used in sequence-to-sequence models too, e.g. for
 translation [Sutskever et al., 2014](http://arxiv.org/abs/1409.3215).
 
@@ -203,7 +203,7 @@ sentence with a special PAD symbol. Then we'd need only one seq2seq model,
 for the padded lengths. But on shorter sentence our model would be inefficient,
 encoding and decoding many PAD symbols that are useless.
 
-As a compromise between contructing a graph for every pair of lengths and
+As a compromise between constructing a graph for every pair of lengths and
 padding to a single length, we use a number of *buckets* and pad each sentence
 to the length of the bucket above it. In `translate.py` we use the following
 default buckets.
@@ -233,7 +233,7 @@ with encoder inputs representing `[PAD PAD "." "go" "I"]` and decoder
 inputs `[GO "Je" "vais" "." EOS PAD PAD PAD PAD PAD]`.
 
 
-## Let's Run It {#run_it}
+## Let's Run It 
 
 To train the model described above, we need to a large English-French corpus.
 We will use the *10^9-French-English corpus* from the

@@ -19,7 +19,6 @@ from __future__ import division
 from __future__ import print_function
 
 from tensorflow.python.framework import ops
-from tensorflow.python.ops import constant_op
 from tensorflow.python.ops import control_flow_ops
 from tensorflow.python.ops import math_ops
 from tensorflow.python.ops import state_ops
@@ -31,14 +30,14 @@ from tensorflow.python.training import training_ops
 class AdamOptimizer(optimizer.Optimizer):
   """Optimizer that implements the Adam algorithm.
 
+  See this [paper](http://arxiv.org/pdf/1412.6980v7.pdf).
+
   @@__init__
   """
 
   def __init__(self, learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8,
                use_locking=False, name="Adam"):
     """Construct a new Adam optimizer.
-
-    Implementation is based on: http://arxiv.org/pdf/1412.6980v7.pdf
 
     Initialization:
 

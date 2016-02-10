@@ -19,6 +19,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import collections
 import errno
 import functools
 import glob as _glob
@@ -317,6 +318,23 @@ def Remove(path):   # pylint: disable=invalid-name
   os.remove(path)
 
 
+def Rename(oldpath, newpath, overwrite=False):
+  """Rename or move a file, or a local directory.
+
+  Args:
+    oldpath: string; a pathname of a file.
+    newpath: string; a pathname to which the file will be moved.
+    overwrite: boolean; if false, it is an error for newpath to be
+      occupied by an existing file.
+
+  Raises:
+    OSError: If "newpath" is occupied by an existing file and overwrite=False.
+  """
+  if not overwrite and Exists(newpath) and not IsDirectory(newpath):
+    raise OSError(errno.EEXIST, os.strerror(errno.EEXIST), newpath)
+  os.rename(oldpath, newpath)
+
+
 def DeleteRecursively(path):   # pylint: disable=invalid-name
   """Delete the file or directory "path" recursively.
 
@@ -380,3 +398,24 @@ def Walk(top, topdown=1, onerror=None):
     (dirname, [subdirname, subdirname, ...], [filename, filename, ...])
   """
   return os.walk(top, topdown=topdown, onerror=onerror)
+
+
+def Stat(path):   # pylint: disable=invalid-name
+  """Gets the status of a file.
+
+  Args:
+    path: The file to call Stat() on.
+
+  Does the equivalent of Stat() on the specified "path" and return file
+  properties.
+
+  Returns:
+    An object whose attributes give information on the file.
+
+  Raises:
+    OSError: If "path" does not exist.
+  """
+  statinfo = os.stat(path)
+  filestat = collections.namedtuple('FileStat', ['mtime'])
+  filestat.mtime = statinfo.st_mtime
+  return filestat
